@@ -1,17 +1,6 @@
 use std::env;
 use std::fs;
 
-fn create_file(directories: &String, files: Vec<&str>){
-    fs::File::create(files[0]).expect("something went wrong, try typing: punch -d <your_file>"); //creates first file in list with location
-    
-    if files.len() > 1{ //if more than one file in list (comma seperated)
-        for i in 1..files.len(){
-                fs::File::create(format!("{}{}",directories, files[i])).expect("something went wrong, try typing, punch -h ");
-        }
-    }
-    
-}
-
 fn help_message(){
     println!("punch (optional)<flag> <file/location> \n
     -h displays help \n
@@ -19,47 +8,52 @@ fn help_message(){
     ")
 }
 
-fn dynamically_create(file_location: &String){
-    let mut directories = String::new();
-    let mut contains_files: bool = false;
-    for i in file_location.split("/"){
-        if i.contains("."){
-            contains_files = true;
-            break;
+fn create_files_dir(args: &Vec<String>){
+    for i in 1..args.len(){
+        if args[i].contains("/"){
+                fs::create_dir_all(&args[i]).expect(format!("error creating folder: {}", args[i]).as_str());
         }
-        directories.push_str(i);
-        directories.push_str("/");
-    }
+        else{
+            fs::File::create(&args[i]).expect(format!("error creating file: {}", args[i]).as_str());
 
-    fs::create_dir_all(&directories).expect("error creating folders"); //create directories mentioned
-    
-    if contains_files{
-        create_file(&directories, file_location.split(",").collect());
-    }
-    //directories is the folder location without the files
-    //second param may look like this [folder1/file1, file2, file3]
-
-
-
-}
-fn flag_check(flag: &String, file_location: &String){
-    match flag.as_str(){
-        "-h"|"-help" => help_message(),
-        "-d" => dynamically_create(file_location),
-        _ => println!("syntax err: punch -h"),
+        }
     }
 }
+
+fn create_in_dir(args: &Vec<String>){
+    for i in 3..args.len(){
+        if args[i].contains("/"){
+            fs::create_dir_all(format!("{}{}",args[2], args[i])).expect(format!("error creating folder: {}", args[i]).as_str());
+        }
+        else{
+            fs::File::create(format!("{}/{}",args[2], args[i])).expect(format!("error creating file: {}", args[i]).as_str());
+        }
+    }
+}
+
+fn delete_files(args: &Vec<String>){
+    for i in 2..args.len(){
+        if args[i].contains("/"){
+            fs::remove_dir_all(&args[i]).expect(format!("error deleting folder: {}", args[i]).as_str());
+        }
+        else{
+            fs::remove_file(&args[i]).expect(format!("error deleting file: {}", args[i]).as_str());
+        }
+    }
+}
+
 
 fn main(){
     let args: Vec<String> = env::args().collect();
 
-    match args.len(){
-        2 => create_file(&String::from(""),vec![&args[1]]),
-        3 => flag_check(&args[1], &args[2]),
-        _ => println!("syntax err: punch -h"),
+    match args[1].as_str(){
+       "-d"|"-delete" => delete_files(&args),
+       "-h"|"-help" => help_message(),
+       "-dir" => create_in_dir(&args),
+       _ => create_files_dir(&args)
     }
 
-    println!("succesfully created files");
+    //println!("succesfully created files");
 
     
 }
