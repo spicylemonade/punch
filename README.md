@@ -24,12 +24,12 @@
   <a href="https://github.com/spicylemonade/punch/">
     <img src="https://user-images.githubusercontent.com/84095175/179336378-98179393-8c64-4176-9520-afa3747de43e.png" alt="Logo" width="100" height="100">
   </a>
-  <h3 align="center">punch</h3>
+  <h1 align="center">punch</h1>
 
-  <p align="center">
+  <h6 align="center">
     🗂️ file and folder management written in rust :page_facing_up:
    
-  </p>
+  </h6>
 </div>
 
 
