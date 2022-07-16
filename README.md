@@ -97,11 +97,11 @@ name inspired by the "touch" command
    ```
 4. Run the build script
    ```sh
-   . ./build.sh
+   source build.sh
    ```
    ##### or
    ```sh
-    source ./build.sh
+    . ./build.sh
     ```
 
 <p align="right">{<a href="#top">To top</a>}</p>
