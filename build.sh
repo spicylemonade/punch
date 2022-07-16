@@ -22,7 +22,7 @@ fi
 
 
 
-{
+(
      cargo build  --release \
      && echo "succefully compiled" && \
      mv -f ./target/release/punch ~/.punch/bin/
@@ -42,10 +42,10 @@ fi
      \
      echo "puch located at ~/.punch" \
      && echo "complete: type punch -h" &&
-}||{
+)||(
      echo "failed: if you are on debian cc build essentials must be installed, run :" \
      \
      && echo 'sudo apt update && sudo apt upgrade && sudo apt-get install build-essential' \
      \
      && echo 'after running, try building again'
-}
+)
