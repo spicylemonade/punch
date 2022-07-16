@@ -27,7 +27,7 @@
   <h3 align="center">punch</h3>
 
   <p align="center">
-    🗂️ file & folder management written in rust :page_facing_up:
+    🗂️ file and folder management written in rust :page_facing_up:
    
   </p>
 </div>
