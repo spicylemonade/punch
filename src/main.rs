@@ -4,8 +4,14 @@ use std::fs;
 mod in_directory;
 fn help_message(){
     println!("punch (optional)<flag> <file/location> \n
-    -h displays help \n
-    -d lets you dynamically create folders or file location ie: hello/world/test.txt \n
+    
+    punch -h 'to bring up help' \n
+    punch <file_name> 'to create file' \n
+    punch -dir ./<directory_name>/ 'create directory' \n
+    punch ./<directory_name>/ 'to use without -dir flag' \n
+    punch -d <file_name> 'or'  punch -d ./<directory_name>/ 'to delete' \n
+    punch -in ./<target_directory_name>/ <file or directory_name> 'creates files inside target directory' \n
+    punch -din ./<target_directory_name>/ <file or directory_name> 'deletes files inside target directory' \n
     ")
 }
 
@@ -50,7 +56,7 @@ fn trash(args: &Vec<String>){
         }
         else{
             //move to trash
-            fs::copy(&args[i],format!("./trash/{}", args[i]).as_str() )
+            fs::copy(&args[i],format!("~/.punch/trash/{}", args[i]).as_str() )
             .expect(format!("error trashing file: {}", args[i]).as_str());
             //delete
             fs::remove_file(&args[i])
