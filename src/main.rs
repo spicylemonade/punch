@@ -47,24 +47,6 @@ fn create_directory(args: &Vec<String>){
     }
 }
 
-// fn trash(args: &Vec<String>){
-//     for i in 2..args.len(){
-//         if args[i].contains("/"){
-
-//            println!("folders cannot be trashed");
-//            break;
-//         }
-//         else{
-//             //move to trash
-//             fs::copy(&args[i],format!("~/.punch/trash/{}", args[i]).as_str() )
-//             .expect(format!("error trashing file: {}", args[i]).as_str());
-//             //delete
-//             fs::remove_file(&args[i])
-//             .expect(format!("error deleting file: {}", args[i]).as_str());
-//         }
-//     }
-// }
-
 fn main(){
     let args: Vec<String> = env::args().collect();
 
@@ -72,7 +54,6 @@ fn main(){
        "-d"|"-delete" => delete_files(&args),
        "-h"|"-help" => help_message(),
        "-din" => in_directory::delete_files_dir(&args),
-      // "-t" => trash(&args),
        "-in" => in_directory::create_in_dir(&args),
        "-dir" => create_directory(&args),
        _ => create_files(&args)
