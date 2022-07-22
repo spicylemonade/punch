@@ -75,6 +75,9 @@ name inspired by the "touch" command
 * ```sh
   punch -din ./<target_directory_name>/ <file or directory_name> "deletes files inside target directory"
   ```
+* ```sh
+  punch -t <file or directory_name> "trashed the specified file or directory"
+```
 
 
 
