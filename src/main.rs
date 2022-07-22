@@ -3,6 +3,7 @@ use std::path::Path;
 
 use clap::Parser;
 
+mod db;
 mod in_directory;
 
 #[derive(Debug, Parser)]
@@ -14,15 +15,21 @@ pub struct Args {
     /// to delete
     #[clap(short, long, value_parser)]
     del: Option<Vec<String>>,
-    /// creates files inside target directory
+    /// creates files inside target directory-first arguement is target
     #[clap(short, long, value_parser, multiple_values = true)]
     r#in: Option<Vec<String>>,
-    /// deletes files inside target directory
+    /// deletes files inside target directory-first arguement is target
     #[clap(long, value_parser, multiple_values = true)]
     din: Option<Vec<String>>,
+
     /// send the file to trash can
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
+
+
+    #[clap(short, long, value_parser, multiple_values=true)]
+    trash: Option<Vec<String>>
+
 }
 
 
@@ -36,6 +43,8 @@ impl Args {
         } else if let Some(_) = self.r#in {
             return InputType::CreateIn;
          } else if let Some(_) = self.trash {
+
+        } else if let Some(_) = self.trash {
             return InputType::Trash;
         } else if self.target.len() > 0 {
             return InputType::Create;
@@ -55,6 +64,7 @@ enum InputType {
 }
 struct Trash<'a>{
     trash_path: &'a Path
+    Trash,
 }
 
 impl<'a> Trash<'a> {
@@ -146,6 +156,7 @@ fn trash_files(args: &Args){
  
 
 fn main() {
+    
     let args = Args::parse();
     match args.input_type() {
         InputType::DeleteIn => in_directory::delete_files_dir(&args),
@@ -153,5 +164,6 @@ fn main() {
         InputType::Del => delete_files(&args),
         InputType::Create => create_files(&args),
         InputType::Trash => trash_files(&args)
+        InputType::Trash => db::push(&args.trash.clone().unwrap()),
     }
 }
