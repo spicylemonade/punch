@@ -8,13 +8,10 @@ mod in_directory;
 #[clap(trailing_var_arg = true)]
 pub struct Args {
     /// to create file
-    #[clap(short, value_parser, multiple_values = true)]
-    files: Option<Vec<String>>,
-    /// to create a single file
-    #[clap(value_parser)]
-    create: Option<String>,
+    #[clap(value_parser, multiple_values = true)]
+    target: Vec<String>,
     /// to delete
-    #[clap(short, long, value_parser)]
+    #[clap(short, long, value_parser, multiple_values = true)]
     del: Option<Vec<String>>,
     /// creates files inside target directory
     #[clap(short, long, value_parser, multiple_values = true)]
@@ -32,7 +29,7 @@ impl Args {
             return InputType::Del;
         } else if let Some(_) = self.r#in {
             return InputType::CreateIn;
-        } else if let Some(_) = self.target {
+        } else if self.target.len() > 0 {
             return InputType::Create;
         } else {
             unreachable!()
@@ -49,7 +46,7 @@ enum InputType {
 }
 
 fn create_files(args: &Args) {
-    let args = args.target.clone().unwrap();
+    let args = args.target.clone();
     for i in 0..args.len() {
         if args[i].contains("/") && args[i].ends_with("/") {
             fs::create_dir_all(&args[i])
@@ -70,15 +67,10 @@ fn delete_files(args: &Args) {
         }
     }
 }
-fn create_directory(args: &Args) {
-    let args = args.target.clone().unwrap();
-    for i in 0..args.len() {
-        fs::create_dir_all(&args[i]).expect(format!("error creating folder: {}", args[i]).as_str());
-    }
-}
 
 fn main() {
     let args = Args::parse();
+    eprintln!("{:#?}", args);
     match args.input_type() {
         InputType::DeleteIn => in_directory::delete_files_dir(&args),
         InputType::CreateIn => in_directory::create_in_dir(&args),
@@ -86,4 +78,3 @@ fn main() {
         InputType::Create => create_files(&args),
     }
 }
-
