@@ -70,7 +70,6 @@ fn delete_files(args: &Args) {
 
 fn main() {
     let args = Args::parse();
-    eprintln!("{:#?}", args);
     match args.input_type() {
         InputType::DeleteIn => in_directory::delete_files_dir(&args),
         InputType::CreateIn => in_directory::create_in_dir(&args),
