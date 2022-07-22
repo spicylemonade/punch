@@ -8,3 +8,6 @@ edition = "2021"
 
 [dependencies]
 clap = {version = "3.2.14", features = ["derive"]}
+rusqlite = {version="0.28.0", features = ["chrono"]}
+chrono = "0.4.19"
+shellexpand = "2.1.0"

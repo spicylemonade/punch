@@ -2,6 +2,7 @@ use std::fs;
 
 use clap::Parser;
 
+mod db;
 mod in_directory;
 
 #[derive(Debug, Parser)]
@@ -19,6 +20,9 @@ pub struct Args {
     /// deletes files inside target directory-first arguement is target
     #[clap(long, value_parser, multiple_values = true)]
     din: Option<Vec<String>>,
+
+    #[clap(short, long, value_parser, multiple_values=true)]
+    trash: Option<Vec<String>>
 }
 
 
@@ -31,6 +35,8 @@ impl Args {
             return InputType::Del;
         } else if let Some(_) = self.r#in {
             return InputType::CreateIn;
+        } else if let Some(_) = self.trash {
+            return InputType::Trash;
         } else if self.target.len() > 0 {
             return InputType::Create;
         } else {
@@ -45,6 +51,7 @@ enum InputType {
     CreateIn,
     Del,
     Create,
+    Trash,
 }
 
 fn create_files(args: &Args) {
@@ -71,11 +78,13 @@ fn delete_files(args: &Args) {
 }
 
 fn main() {
+    
     let args = Args::parse();
     match args.input_type() {
         InputType::DeleteIn => in_directory::delete_files_dir(&args),
         InputType::CreateIn => in_directory::create_in_dir(&args),
         InputType::Del => delete_files(&args),
         InputType::Create => create_files(&args),
+        InputType::Trash => db::push(&args.trash.clone().unwrap()),
     }
 }
