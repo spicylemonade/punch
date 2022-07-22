@@ -282,12 +282,9 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "clap",
-
  "home",
-
  "rusqlite",
  "shellexpand",
-
 ]
 
 [[package]]

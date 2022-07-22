@@ -26,10 +26,6 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
 
-
-    #[clap(short, long, value_parser, multiple_values=true)]
-    trash: Option<Vec<String>>
-
 }
 
 
@@ -42,8 +38,6 @@ impl Args {
             return InputType::Del;
         } else if let Some(_) = self.r#in {
             return InputType::CreateIn;
-         } else if let Some(_) = self.trash {
-
         } else if let Some(_) = self.trash {
             return InputType::Trash;
         } else if self.target.len() > 0 {
@@ -63,8 +57,7 @@ enum InputType {
     Trash
 }
 struct Trash<'a>{
-    trash_path: &'a Path
-    Trash,
+    trash_path: &'a Path,
 }
 
 impl<'a> Trash<'a> {
@@ -75,9 +68,9 @@ impl<'a> Trash<'a> {
     }
 
     fn copy_recursively(&self, path: &Path) {
-         let entries = fs::read_dir(path).expect("unable to parse directory");
         if path.is_dir(){
-        
+            let entries = fs::read_dir(path).expect("unable to parse directory");
+
             fs::create_dir_all(Path::new(self.trash_path).join(path)).unwrap(); 
              
             for entry in entries {
@@ -147,6 +140,7 @@ fn trash_files(args: &Args){
              fs::remove_dir_all(file)
                 .expect(format!("error removing directory: {:?}", file).as_str());
         } else { 
+           
             fs::remove_file(file)
                 .expect(format!("error removing directory: {:?}", file).as_str());
      
@@ -163,7 +157,6 @@ fn main() {
         InputType::CreateIn => in_directory::create_in_dir(&args),
         InputType::Del => delete_files(&args),
         InputType::Create => create_files(&args),
-        InputType::Trash => trash_files(&args)
-        InputType::Trash => db::push(&args.trash.clone().unwrap()),
+        InputType::Trash => {trash_files(&args); db::push(&&args.trash.clone().unwrap())}
     }
 }
