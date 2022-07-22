@@ -10,6 +10,9 @@ pub struct Args {
     /// to create file
     #[clap(short, value_parser, multiple_values = true)]
     target: Option<Vec<String>>,
+    /// to create a single file
+    #[clap(value_parser)]
+    create: Option<String>,
     /// to delete
     #[clap(short, long, value_parser)]
     del: Option<Vec<String>>,
@@ -20,7 +23,6 @@ pub struct Args {
     #[clap(long, value_parser, multiple_values = true)]
     din: Option<Vec<String>>,
 }
-
 
 impl Args {
     fn input_type(&self) -> InputType {
