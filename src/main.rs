@@ -13,10 +13,10 @@ pub struct Args {
     /// to delete
     #[clap(short, long, value_parser)]
     del: Option<Vec<String>>,
-    /// creates files inside target directory
+    /// creates files inside target directory-first arguement is target
     #[clap(short, long, value_parser, multiple_values = true)]
     r#in: Option<Vec<String>>,
-    /// deletes files inside target directory
+    /// deletes files inside target directory-first arguement is target
     #[clap(long, value_parser, multiple_values = true)]
     din: Option<Vec<String>>,
 }
