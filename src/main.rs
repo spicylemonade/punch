@@ -9,7 +9,7 @@ mod in_directory;
 pub struct Args {
     /// to create file
     #[clap(short, value_parser, multiple_values = true)]
-    target: Option<Vec<String>>,
+    files: Option<Vec<String>>,
     /// to create a single file
     #[clap(value_parser)]
     create: Option<String>,
