@@ -3,8 +3,7 @@ use std::fs;
 use crate::Args;
 
 pub fn create_in_dir(args: &Args) {
-    let args = args.r#in.clone().unwrap();
-    println!("{:?}", args);
+    let args = args.r#in.clone().unwrap(); 
     for i in 1..args.len() {
         if args[i].contains("/") {
             fs::create_dir_all(format!("{}{}", args[0], args[i]))
