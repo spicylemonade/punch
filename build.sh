@@ -7,8 +7,8 @@ if ! [ -x "$(command -v cargo)" ]; then
   echo 'Error: rust compiler is not installed.' >&2
 
     echo 'installing rust compiler..'
-    #curls the rust compiler 
-    
+    #curls the rust compiler
+
     curl https://sh.rustup.rs -sSf | sh -s -- -y
 
     . $HOME/.cargo/env
@@ -18,7 +18,7 @@ fi
 
 [ ! -d  ~/.punch ] && \
 
-     mkdir ~/.punch && mkdir ~/.punch/trash && mkdir ~/.punch/bin && echo "~/.punch created in home"
+     mkdir -p ~/.punch/trash && mkdir ~/.punch/bin && echo "~/.punch created in home"
 
 
 cargo build  --release \
@@ -30,7 +30,7 @@ mv ./target/release/punch ~/.punch/bin/
     printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
     && printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
     && . ~/.zshrc \
-    && . ~/.bashrc 
+    && . ~/.bashrc
 
 }||{
      printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
