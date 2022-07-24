@@ -1,11 +1,13 @@
-use std::io::{BufWriter, Write};
-use std::{fs, io::Read};
+
+use std::fs;
 use std::path::Path;
 
 use clap::{Parser};
 
 mod db;
 mod in_directory;
+mod punch;
+mod trash;
 
 #[derive(Debug, Parser)]
 #[clap(trailing_var_arg = true)]
@@ -72,57 +74,6 @@ enum InputType {
     Show,
 }
 
-struct Trash<'a>{
-    trash_path: &'a Path,
-}
-
-impl<'a> Trash<'a> {
-    fn new(path: &'a Path) -> Self {
-        Self {
-            trash_path: path
-        }
-    }
-
-    fn copy_recursively(&self, path: &Path) {
-        if path.is_dir(){
-            let entries = fs::read_dir(path).expect("unable to parse directory");
-
-            fs::create_dir_all(Path::new(self.trash_path).join(path)).unwrap(); 
-             
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    if let Ok(file_type) = entry.file_type() {
-                        if file_type.is_dir() {
-                            // if it is a directory we need to copy the things in the directory . so call again with the new path
-                            self.copy_recursively(&path.join(entry.file_name()))
-                        } else {
-                            let from = path.join(entry.file_name());
-                            let to = Path::new(self.trash_path).join(path.join(entry.file_name()));
-                            self.move_file(&from, &to);
-                        }
-                    }
-                }
-            }
-        } else {
-            //fs::copy(path ,Path::new(self.trash_path).join(path)).unwrap();
-            let to = Path::new(self.trash_path).join(path);
-            self.move_file(path, &to);
-        }
-
-     
-    }  
-     fn move_file(&self, from: &Path , to: &Path) {
-            //fs::copy() ,).unwrap();
-        let mut f= fs::File::open(from).unwrap();
-        let mut file_buffer = Vec::new();
-        f.read_to_end(&mut file_buffer).unwrap();
- 
-        let mut dest_file_buffer = BufWriter::new(fs::File::create(to).unwrap());
-        dest_file_buffer.write_all(&file_buffer).unwrap();
-        dest_file_buffer.flush().unwrap();
-    }
-}
-
 
 fn create_files(args: &Args) {
     let args = args.target.clone();
@@ -156,7 +107,7 @@ fn trash_files(args: &Args){
     };
 
     let trash_path = home_path.join(Path::new(".punch/trash"));
-    let trash = Trash::new(&trash_path);
+    let trash = trash::Trash::new(&trash_path);
 
     if !trash.trash_path.exists(){ // Path Does not Exists
         // Create the Directory
@@ -165,18 +116,8 @@ fn trash_files(args: &Args){
     // Move files for directories to crash
     for i in 0..args.len(){
         let file = Path::new(&args[i]); 
-        
-        trash.copy_recursively(file);
-        if Path::new(file).is_dir() {
-            //Iterate the directory and move it
-             fs::remove_dir_all(file)
-                .expect(format!("error removing directory: {:?}", file).as_str());
-        } else { 
-           
-            fs::remove_file(file)
-                .expect(format!("error removing directory: {:?}", file).as_str());
-     
-        }
+        trash.move_to_trash(file); // First Part
+        trash.remove_from_source(file); // Second Part
     }
 }
 
@@ -207,8 +148,8 @@ fn main() {
         },
 
         InputType::Trash => { 
-            db::push(&&args.trash.clone().unwrap(), "Trash");
             trash_files(&args);
+            db::push(&&args.trash.clone().unwrap(), "Trash");
         },
 
         InputType::Undo => { db::undo()},
