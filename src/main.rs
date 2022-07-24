@@ -199,34 +199,35 @@ fn main() {
     let args = Args::parse();
 
     match args.input_type() {
-        InputType::DeleteIn => {
-            in_directory::delete_files_dir(&args);
+InputType::DeleteIn => {
+            in_directory::delete_files_dir(&args); 
             db::push(&&args.din.clone().unwrap(), "DeleteIn")
-        }
+        },
 
         InputType::CreateIn => {
-            in_directory::create_in_dir(&args);
+            in_directory::create_in_dir(&args); 
             db::push(&&args.r#in.clone().unwrap(), "CreateIn")
-        }
+        },
 
         InputType::Del => {
-            delete_files(&args);
-            db::push(&&args.del.clone().unwrap(), "Delete")
-        }
+            db::push(&&args.del.clone().unwrap(), "Delete");
+            delete_files(&args); 
+            },
 
         InputType::Create => {
-            create_files(&args);
+            create_files(&args); 
             db::push(&&args.target, "Create")
-        }
+        },
 
-        InputType::Trash => {
+        InputType::Trash => { 
+            db::push(&&args.trash.clone().unwrap(), "Trash");
             trash_files(&args);
-            db::push(&&args.trash.clone().unwrap(), "Trash")
-        }
+        },
 
-        InputType::Undo => db::undo(),
+        InputType::Undo => { db::undo()},
+      
 
-        InputType::Show => db::show(),
+        InputType::Show => { db::show()},
         InputType::Rename => rename_file(&args),
     }
 }
