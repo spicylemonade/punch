@@ -22,11 +22,11 @@ pub fn push(paths: &Vec<String>, action: &str) {
     let date = Local::now().format("%Y-%m-%d").to_string();
     conn.execute(
         "CREATE TABLE IF NOT EXISTS files (
-            name    TEXT PRIMARY KEY,
-            time    TEXT NOT NULL,
-            date  TEXT NOT NULL,
-            path   TEXT NOT NULL,
-            action TEXT NOT NULL
+            name    TEXT,
+            time    TEXT,
+            date    TEXT,
+            path    TEXT,
+            action  TEXT
         )",
         (), 
     ).unwrap();
@@ -36,18 +36,18 @@ pub fn push(paths: &Vec<String>, action: &str) {
         "DELETE FROM files where date < (?1)",
         [&date], 
     ).unwrap();
+
     for i in 0..paths.len(){
         conn.execute(
-            "INSERT INTO files (name, time, date, path, action) VALUES (?1, ?2, ?3, ?4, ?5)", 
-        (
+            "INSERT INTO files (name, time, date, path, action) values (?1, ?2, ?3, ?4, ?5)", 
+        &[
             &paths[i],
             &time,
             &date,
-            fs::canonicalize(&paths[i]).ok().unwrap().to_str(),
-            &action),
-        ).unwrap();
-    }
-    
+            fs::canonicalize(&paths[i]).ok().unwrap().to_str().unwrap(),
+            &action]
+        ).expect("sql query failed");
+    } 
 
 }
 
@@ -68,9 +68,39 @@ pub fn show(){
         println!("{:#?}", file.unwrap() as Files);
     }
 }
-fn u_delete(path: &String){
-    todo!()
+
+//if the action preformed on the file was "Trash"
+fn u_trash(name: &Path, path: &Path){
+    //systems home dir
+  let home_path  = match  home::home_dir() {
+    Some(path) => path,
+    _ => panic!("Unable to trash files")
+};
+
+  if home_path.join(".ptrash").join(name).is_dir(){
+
+     let entries = fs::read_dir(home_path.join(".ptrash").join(name)).expect("unable to parse directory");
+
+     fs::create_dir_all(path).unwrap(); 
+      
+     for entry in entries {
+         if let Ok(entry) = entry {
+             if let Ok(file_type) = entry.file_type() {
+                 if file_type.is_dir() {
+                     // if it is a directory we need to copy the things in the directory . so call again with the new path
+                     u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
+                 } else {
+
+                     fs::copy(home_path.join(".ptrash").join(&name.join(entry.file_name())) ,path.join(entry.file_name())).unwrap();
+                 }
+             }
+         }
+     } 
+  } else {
+      fs::copy(home_path.join(".ptrash").join(name) , path).unwrap();
+  }
 }
+//if the action preformed on the file was "Create"
 fn u_create(path: &String){
     if (Path::new(path)).is_dir() {
         fs::remove_dir_all(path)
@@ -96,11 +126,20 @@ pub fn undo(){
     if latest_file._action == "Create"{
         u_create(&latest_file._path);
     }
-    else{
-        u_delete(&latest_file._path);
+    else if latest_file._action == "Trash"{
+        u_trash(Path::new(&latest_file._name),Path::new(&latest_file._path));
+        //delete file in trash after
+        let home_path  = match  home::home_dir() {
+            Some(path) => path,
+            _ => panic!("Unable to trash files")
+        };
+        let trash_file = home_path.join(".ptrash").join(&latest_file._name);
+        if trash_file.is_dir() {
+            fs::remove_dir_all(&trash_file)
+                .expect(format!("error deleting folder: {}", &trash_file.display()).as_str());
+        } else {
+            fs::remove_file(&trash_file).expect(format!("error deleting file: {}", &trash_file.display()).as_str());
+        }
     }
-
-
-       
-    
+        
 }
