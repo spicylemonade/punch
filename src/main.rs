@@ -141,7 +141,7 @@ fn rename_file(args: &Args) {
     rename(source, to).expect("Unable to rename");
 }
 
-n move_file(args: &Args) {
+fn move_file(args: &Args) {
     let args = args.mve.clone().unwrap();
 
     let original_file = Path::new(&args[0]).file_name().unwrap().to_str().unwrap();
