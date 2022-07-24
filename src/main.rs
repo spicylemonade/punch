@@ -1,8 +1,10 @@
 
 use std::fs;
-use std::path::Path;
+use std::env::current_dir;
+use std::fs::rename;
+use std::path::{Path, PathBuf};
 
-use clap::{Parser};
+use clap::Parser;
 
 mod db;
 mod in_directory;
@@ -29,19 +31,23 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
 
-    #[clap(short,long)]
+    #[clap(short, long)]
     undo: bool,
 
-    #[clap(short,long)]
+    #[clap(short, long)]
     show: bool,
+    
+    /// Renam a file
+    #[clap(short, long, value_parser, multiple_values = true)]
+    ren: Option<Vec<String>>,
 
-
+    /// Move a file from one directory to another.
+    #[clap(short, long, value_parser, multiple_values = true)]
+    mve: Option<Vec<String>>
 }
-
 
 impl Args {
     fn input_type(&self) -> InputType {
-        
         if let Some(_) = self.din {
             return InputType::DeleteIn;
         } else if let Some(_) = self.del {
@@ -50,14 +56,18 @@ impl Args {
             return InputType::CreateIn;
         } else if let Some(_) = self.trash {
             return InputType::Trash;
+        } else if let Some(_) = self.mve {
+            return InputType::Move;
         } else if self.target.len() > 0 {
             return InputType::Create;
-        }else if let true = self.undo{
+        } else if let true = self.undo {
             return InputType::Undo;
-        }else if let true = self.show{
+        } else if let true = self.show {
             return InputType::Show;
-        }  
-        else {
+        } else if let Some(ref args) = self.ren {
+            assert!(args.len() == 2, "Expected 2 arguments got {}", args.len());
+            return InputType::Rename;
+        }else {
             unreachable!()
         }
     }
@@ -72,6 +82,8 @@ enum InputType {
     Trash,
     Undo,
     Show,
+    Rename,
+    Move,
 }
 
 
@@ -98,21 +110,22 @@ fn delete_files(args: &Args) {
     }
 }
 
-fn trash_files(args: &Args){
+fn trash_files(args: &Args) {
     let args = args.trash.clone().unwrap();
     // Check if the .ptrash/ directory exist in ~
-    let home_path  = match  home::home_dir() {
+    let home_path = match home::home_dir() {
         Some(path) => path,
-        _ => panic!("Unable to trash files")
+        _ => panic!("Unable to trash files"),
     };
 
     let trash_path = home_path.join(Path::new(".punch/trash"));
     let trash = trash::Trash::new(&trash_path);
 
-    if !trash.trash_path.exists(){ // Path Does not Exists
+    if !trash.trash_path.exists() {
+        // Path Does not Exists
         // Create the Directory
         fs::create_dir(trash.trash_path).expect(format!("error creating trash can").as_str())
-    } 
+    }
     // Move files for directories to crash
     for i in 0..args.len(){
         let file = Path::new(&args[i]); 
@@ -123,11 +136,10 @@ fn trash_files(args: &Args){
 
 
 fn main() {
-    
     let args = Args::parse();
 
     match args.input_type() {
-        InputType::DeleteIn => {
+InputType::DeleteIn => {
             in_directory::delete_files_dir(&args); 
             db::push(&&args.din.clone().unwrap(), "DeleteIn")
         },
@@ -153,8 +165,12 @@ fn main() {
         },
 
         InputType::Undo => { db::undo()},
-      
 
         InputType::Show => { db::show()},
+        
+        InputType::Rename => rename_file(&args),
+
+        InputType::Move => { move_file(&args);
+            db::push(&&args.mve.clone().unwrap(), "Move") }
     }
 }
