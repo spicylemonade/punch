@@ -1,7 +1,8 @@
-use std::fs;
-use std::path::Path;
+use std::env::current_dir;
+use std::fs::{self, rename};
+use std::path::{Path, PathBuf};
 
-use clap::{Parser};
+use clap::Parser;
 
 mod db;
 mod in_directory;
@@ -26,19 +27,18 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
 
-    #[clap(short,long)]
+    #[clap(short, long)]
     undo: bool,
 
-    #[clap(short,long)]
+    #[clap(short, long)]
     show: bool,
-
-
+    /// Renam a file
+    #[clap(short, long, value_parser, multiple_values = true)]
+    ren: Option<Vec<String>>,
 }
-
 
 impl Args {
     fn input_type(&self) -> InputType {
-        
         if let Some(_) = self.din {
             return InputType::DeleteIn;
         } else if let Some(_) = self.del {
@@ -49,12 +49,14 @@ impl Args {
             return InputType::Trash;
         } else if self.target.len() > 0 {
             return InputType::Create;
-        }else if let true = self.undo{
+        } else if let true = self.undo {
             return InputType::Undo;
-        }else if let true = self.show{
+        } else if let true = self.show {
             return InputType::Show;
-        }  
-        else {
+        } else if let Some(ref args) = self.ren {
+            assert!(args.len() == 2, "Expected 2 arguments got {}", args.len());
+            return InputType::Rename;
+        } else {
             unreachable!()
         }
     }
@@ -69,25 +71,24 @@ enum InputType {
     Trash,
     Undo,
     Show,
+    Rename,
 }
 
-struct Trash<'a>{
+struct Trash<'a> {
     trash_path: &'a Path,
 }
 
 impl<'a> Trash<'a> {
     fn new(path: &'a Path) -> Self {
-        Self {
-            trash_path: path
-        }
+        Self { trash_path: path }
     }
 
     fn copy_recursively(&self, path: &Path) {
-        if path.is_dir(){
+        if path.is_dir() {
             let entries = fs::read_dir(path).expect("unable to parse directory");
 
-            fs::create_dir_all(Path::new(self.trash_path).join(path)).unwrap(); 
-             
+            fs::create_dir_all(Path::new(self.trash_path).join(path)).unwrap();
+
             for entry in entries {
                 if let Ok(entry) = entry {
                     if let Ok(file_type) = entry.file_type() {
@@ -95,17 +96,20 @@ impl<'a> Trash<'a> {
                             // if it is a directory we need to copy the things in the directory . so call again with the new path
                             self.copy_recursively(&path.join(entry.file_name()))
                         } else {
-                            fs::copy(path.join(entry.file_name()) ,Path::new(self.trash_path).join(path.join(entry.file_name()))).unwrap();
+                            fs::copy(
+                                path.join(entry.file_name()),
+                                Path::new(self.trash_path).join(path.join(entry.file_name())),
+                            )
+                            .unwrap();
                         }
                     }
                 }
             }
         } else {
-            fs::copy(path ,Path::new(self.trash_path).join(path)).unwrap();
+            fs::copy(path, Path::new(self.trash_path).join(path)).unwrap();
         }
     }
 }
-
 
 fn create_files(args: &Args) {
     let args = args.target.clone();
@@ -130,64 +134,99 @@ fn delete_files(args: &Args) {
     }
 }
 
-fn trash_files(args: &Args){
+fn trash_files(args: &Args) {
     let args = args.trash.clone().unwrap();
     // Check if the .ptrash/ directory exist in ~
-    let home_path  = match  home::home_dir() {
+    let home_path = match home::home_dir() {
         Some(path) => path,
-        _ => panic!("Unable to trash files")
+        _ => panic!("Unable to trash files"),
     };
 
     let trash_path = home_path.join(Path::new(".ptrash"));
     let trash = Trash::new(&trash_path);
 
-    if !trash.trash_path.exists(){ // Path Does not Exists
+    if !trash.trash_path.exists() {
+        // Path Does not Exists
         // Create the Directory
         fs::create_dir(trash.trash_path).expect(format!("error creating trash can").as_str())
-    } 
+    }
     // Move files for directories to crash
-    for i in 0..args.len(){
+    for i in 0..args.len() {
         let file = Path::new(&args[i]);
-        
-        
+
         trash.copy_recursively(file);
         if Path::new(file).is_dir() {
             //Iterate the directory and move it
-             fs::remove_dir_all(file)
+            fs::remove_dir_all(file)
                 .expect(format!("error removing directory: {:?}", file).as_str());
-        } else { 
-           
-            fs::remove_file(file)
-                .expect(format!("error removing directory: {:?}", file).as_str());
-     
+        } else {
+            fs::remove_file(file).expect(format!("error removing directory: {:?}", file).as_str());
         }
     }
 }
-
+fn rename_file(args: &Args) {
+    let args = args.ren.clone().unwrap();
+    let mut source;
+    if args[0].clone().starts_with('.') {
+        source = current_dir().unwrap()
+    } else {
+        source = PathBuf::new();
+    }
+    let mut buf = PathBuf::new();
+    args[0].clone().split('/').for_each(|path| {
+        if path != "." {
+            buf.push(path)
+        }
+    });
+    source = source.join(buf);
+    let mut to;
+    if args[1].clone().starts_with('.') {
+        to = current_dir().unwrap()
+    } else {
+        to = PathBuf::new();
+    }
+    let mut buf = PathBuf::new();
+    args[1].clone().split('/').for_each(|path| {
+        if path != "." {
+            buf.push(path)
+        }
+    });
+    to = to.join(buf);
+    rename(source, to).expect("Unable to rename");
+}
 
 fn main() {
-    
     let args = Args::parse();
 
     match args.input_type() {
-        InputType::DeleteIn => {in_directory::delete_files_dir(&args); 
-            db::push(&&args.din.clone().unwrap(), "DeleteIn")},
+        InputType::DeleteIn => {
+            in_directory::delete_files_dir(&args);
+            db::push(&&args.din.clone().unwrap(), "DeleteIn")
+        }
 
-        InputType::CreateIn => {in_directory::create_in_dir(&args); 
-            db::push(&&args.r#in.clone().unwrap(), "CreateIn")},
+        InputType::CreateIn => {
+            in_directory::create_in_dir(&args);
+            db::push(&&args.r#in.clone().unwrap(), "CreateIn")
+        }
 
-        InputType::Del => {delete_files(&args); 
-            db::push(&&args.del.clone().unwrap(), "Delete")},
+        InputType::Del => {
+            delete_files(&args);
+            db::push(&&args.del.clone().unwrap(), "Delete")
+        }
 
-        InputType::Create => {create_files(&args); 
-            db::push(&&args.target, "Create")},
+        InputType::Create => {
+            create_files(&args);
+            db::push(&&args.target, "Create")
+        }
 
-        InputType::Trash => {trash_files(&args); 
-            db::push(&&args.trash.clone().unwrap(), "Trash")},
+        InputType::Trash => {
+            trash_files(&args);
+            db::push(&&args.trash.clone().unwrap(), "Trash")
+        }
 
-        InputType::Undo => { db::undo()},
-      
+        InputType::Undo => db::undo(),
 
-        InputType::Show => { db::show()},
+        InputType::Show => db::show(),
+        InputType::Rename => rename_file(&args),
     }
 }
