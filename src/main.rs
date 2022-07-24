@@ -163,9 +163,7 @@ fn rename_file(args: &Args) {
     }
     let mut buf = PathBuf::new();
     args[0].clone().split('/').for_each(|path| if path != "." {buf.push(path)});
-    dbg!(buf.clone());
     source = source.join(buf);
-    dbg!(source.clone());
     let mut to;
     if args[1].clone().starts_with('.') {
         to = current_dir().unwrap()
@@ -173,14 +171,8 @@ fn rename_file(args: &Args) {
         to = PathBuf::new();
     }
     let mut buf = PathBuf::new();
-    dbg!(args[1].clone());
     args[1].clone().split('/').for_each(|path| if path != "." {buf.push(path)});
-    dbg!(buf.clone());
-    dbg!(to.clone());
-    to = to.join(PathBuf::try_from(args[0].clone()).unwrap());
-    dbg!(to.clone());
-    eprintln!("{}", source.display());
-    eprintln!("{}", to.display());
+    to = to.join(buf);
     rename(source, to).expect("Unable to rename");
 }
 
