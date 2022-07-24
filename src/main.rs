@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use clap::Parser;
+use clap::{Parser};
 
 mod db;
 mod in_directory;
@@ -26,6 +26,13 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
 
+    #[clap(short,long)]
+    undo: bool,
+
+    #[clap(short,long)]
+    show: bool,
+
+
 }
 
 
@@ -42,7 +49,12 @@ impl Args {
             return InputType::Trash;
         } else if self.target.len() > 0 {
             return InputType::Create;
-        } else {
+        }else if let true = self.undo{
+            return InputType::Undo;
+        }else if let true = self.show{
+            return InputType::Show;
+        }  
+        else {
             unreachable!()
         }
     }
@@ -54,8 +66,11 @@ enum InputType {
     CreateIn,
     Del,
     Create,
-    Trash
+    Trash,
+    Undo,
+    Show,
 }
+
 struct Trash<'a>{
     trash_path: &'a Path,
 }
@@ -134,6 +149,7 @@ fn trash_files(args: &Args){
     for i in 0..args.len(){
         let file = Path::new(&args[i]);
         
+        
         trash.copy_recursively(file);
         if Path::new(file).is_dir() {
             //Iterate the directory and move it
@@ -147,16 +163,31 @@ fn trash_files(args: &Args){
         }
     }
 }
- 
+
 
 fn main() {
     
     let args = Args::parse();
+
     match args.input_type() {
-        InputType::DeleteIn => in_directory::delete_files_dir(&args),
-        InputType::CreateIn => in_directory::create_in_dir(&args),
-        InputType::Del => delete_files(&args),
-        InputType::Create => create_files(&args),
-        InputType::Trash => {trash_files(&args); db::push(&&args.trash.clone().unwrap())}
+        InputType::DeleteIn => {in_directory::delete_files_dir(&args); 
+            db::push(&&args.din.clone().unwrap(), "DeleteIn")},
+
+        InputType::CreateIn => {in_directory::create_in_dir(&args); 
+            db::push(&&args.r#in.clone().unwrap(), "CreateIn")},
+
+        InputType::Del => {delete_files(&args); 
+            db::push(&&args.del.clone().unwrap(), "Delete")},
+
+        InputType::Create => {create_files(&args); 
+            db::push(&&args.target, "Create")},
+
+        InputType::Trash => {trash_files(&args); 
+            db::push(&&args.trash.clone().unwrap(), "Trash")},
+
+        InputType::Undo => { db::undo()},
+      
+
+        InputType::Show => { db::show()},
     }
 }
