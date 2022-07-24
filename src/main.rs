@@ -31,9 +31,11 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
 
+    /// undoes the last create or trash
     #[clap(short, long)]
     undo: bool,
-
+    
+    /// shows command history
     #[clap(short, long)]
     show: bool,
     
@@ -212,6 +214,10 @@ fn main() {
     let args = Args::parse();
 
     match args.input_type() {
+        //order matters for pushing to the database
+        /*for files that result increating in current dir
+        push to db after for files resulting in a deletion (trash,move,delete,deletein),
+        push before*/
 InputType::DeleteIn => {
             in_directory::delete_files_dir(&args); 
             db::push(&&args.din.clone().unwrap(), "DeleteIn")
@@ -243,7 +249,9 @@ InputType::DeleteIn => {
         
         InputType::Rename => rename_file(&args),
 
-        InputType::Move => { move_file(&args);
-            db::push(&&args.mve.clone().unwrap(), "Move") }
+        InputType::Move => {
+            db::push(&&args.mve.clone().unwrap(), "Move");
+            move_file(&args)
+        }
     }
 }
