@@ -236,7 +236,7 @@ fn main() {
 
         InputType::Show => { db::show()},
 
-        InputType::Move => { move_file(&args); }
-        /* db::push(&&args.mve.clone().unwrap(), "Move") <-- This kept causing me errors, I believe it is for the undo feature, please let me know how to fix */
+        InputType::Move => { move_file(&args);
+            db::push(&&args.mve.clone().unwrap(), "Move") }
     }
 }
