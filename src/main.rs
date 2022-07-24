@@ -32,7 +32,9 @@ pub struct Args {
     #[clap(short,long)]
     show: bool,
 
-
+    /// Move a file from one directory to another.
+    #[clap(short, long, value_parser, multiple_values = true)]
+    mve: Option<Vec<String>>
 }
 
 
@@ -47,13 +49,15 @@ impl Args {
             return InputType::CreateIn;
         } else if let Some(_) = self.trash {
             return InputType::Trash;
+        } else if let Some(_) = self.mve {
+            return InputType::Move;
         } else if self.target.len() > 0 {
             return InputType::Create;
         }else if let true = self.undo{
             return InputType::Undo;
         }else if let true = self.show{
             return InputType::Show;
-        }  
+        }
         else {
             unreachable!()
         }
@@ -69,6 +73,7 @@ enum InputType {
     Trash,
     Undo,
     Show,
+    Move
 }
 
 struct Trash<'a>{
@@ -164,6 +169,28 @@ fn trash_files(args: &Args){
     }
 }
 
+fn move_file(args: &Args) {
+    let args = args.mve.clone().unwrap();
+
+    let original_file = Path::new(&args[0]).file_name().unwrap().to_str().unwrap();
+    let new_directory = Path::new(&args[1]).file_name().unwrap().to_str().unwrap();
+
+    if !Path::new(new_directory).exists() {
+        println!("Destination directory does not exist, creating new folder.");
+        fs::create_dir(format!("./{}/", new_directory))
+            .expect(format!("Failed to create new directory: ./{}/", new_directory).as_str());
+    }
+
+    if Path::new(original_file).exists() {
+        fs::File::create(format!("./{}/{}", new_directory, original_file))
+            .expect(format!("Failed to create new file: {}", original_file).as_str());
+        fs::copy(original_file, format!("./{}/{}", new_directory, original_file))
+            .expect(format!("Failed to copy file contents: {}", original_file).as_str());
+        fs::remove_file(format!("./{}", original_file))
+            .expect(format!("Failed to delete old file: {}", original_file).as_str());
+    }
+}
+
 
 fn main() {
     
@@ -186,8 +213,10 @@ fn main() {
             db::push(&&args.trash.clone().unwrap(), "Trash")},
 
         InputType::Undo => { db::undo()},
-      
 
         InputType::Show => { db::show()},
+
+        InputType::Move => { move_file(&args); }
+        /* db::push(&&args.mve.clone().unwrap(), "Move") <-- This kept causing me errors, I believe it is for the undo feature, please let me know how to fix */
     }
 }
