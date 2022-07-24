@@ -1,4 +1,5 @@
-use std::fs;
+use std::io::{BufWriter, Write};
+use std::{fs, io::Read};
 use std::path::Path;
 
 use clap::{Parser};
@@ -95,14 +96,30 @@ impl<'a> Trash<'a> {
                             // if it is a directory we need to copy the things in the directory . so call again with the new path
                             self.copy_recursively(&path.join(entry.file_name()))
                         } else {
-                            fs::copy(path.join(entry.file_name()) ,Path::new(self.trash_path).join(path.join(entry.file_name()))).unwrap();
+                            let from = path.join(entry.file_name());
+                            let to = Path::new(self.trash_path).join(path.join(entry.file_name()));
+                            self.move_file(&from, &to);
                         }
                     }
                 }
             }
         } else {
-            fs::copy(path ,Path::new(self.trash_path).join(path)).unwrap();
+            //fs::copy(path ,Path::new(self.trash_path).join(path)).unwrap();
+            let to = Path::new(self.trash_path).join(path);
+            self.move_file(path, &to);
         }
+
+     
+    }  
+     fn move_file(&self, from: &Path , to: &Path) {
+            //fs::copy() ,).unwrap();
+        let mut f= fs::File::open(from).unwrap();
+        let mut file_buffer = Vec::new();
+        f.read_to_end(&mut file_buffer).unwrap();
+ 
+        let mut dest_file_buffer = BufWriter::new(fs::File::create(to).unwrap());
+        dest_file_buffer.write_all(&file_buffer).unwrap();
+        dest_file_buffer.flush().unwrap();
     }
 }
 
@@ -138,7 +155,7 @@ fn trash_files(args: &Args){
         _ => panic!("Unable to trash files")
     };
 
-    let trash_path = home_path.join(Path::new(".ptrash"));
+    let trash_path = home_path.join(Path::new(".punch/trash"));
     let trash = Trash::new(&trash_path);
 
     if !trash.trash_path.exists(){ // Path Does not Exists
@@ -147,8 +164,7 @@ fn trash_files(args: &Args){
     } 
     // Move files for directories to crash
     for i in 0..args.len(){
-        let file = Path::new(&args[i]);
-        
+        let file = Path::new(&args[i]); 
         
         trash.copy_recursively(file);
         if Path::new(file).is_dir() {
