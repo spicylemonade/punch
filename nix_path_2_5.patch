@@ -1,0 +1,15 @@
+diff --git a/tests/common.sh.in b/tests/common.sh.in
+index 61abab1d7..3947db160 100644
+--- a/tests/common.sh.in
++++ b/tests/common.sh.in
+@@ -119,10 +119,6 @@ restartDaemon() {
+   startDaemon
+ }
+
+-if [[ $(uname) == Linux ]] && [[ -L /proc/self/ns/user ]] && unshare --user true; then
+-    _canUseSandbox=1
+-fi
+-
+ isDaemonNewer () {
+   [[ -n "${NIX_DAEMON_PACKAGE:-}" ]] || return 0
+   local requiredVersion="$1"
