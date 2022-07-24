@@ -91,10 +91,9 @@ fn create_files(args: &Args) {
     let args = args.target.clone();
     for i in 0..args.len() {
         if args[i].contains("/") && args[i].ends_with("/") {
-            fs::create_dir_all(&args[i])
-                .expect(format!("error creating folder: {}", args[i]).as_str());
+            punch::create_directory(Path::new(&args[i]));
         } else {
-            fs::File::create(&args[i]).expect(format!("error creating file: {}", args[i]).as_str());
+            punch::create_file(Path::new(&args[i]));
         }
     }
 }
@@ -102,10 +101,9 @@ fn delete_files(args: &Args) {
     let args = args.del.clone().unwrap();
     for i in 0..args.len() {
         if args[i].contains("/") && args[i].ends_with("/") {
-            fs::remove_dir_all(&args[i])
-                .expect(format!("error deleting folder: {}", args[i]).as_str());
+            punch::remove_directory(Path::new(&args[i])); 
         } else {
-            fs::remove_file(&args[i]).expect(format!("error deleting file: {}", args[i]).as_str());
+            punch::remove_file(Path::new(&args[i])); 
         }
     }
 }
