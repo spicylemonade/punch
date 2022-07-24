@@ -183,7 +183,6 @@ fn move_file(args: &Args) {
                 back_str.push_str("../");
             }
 
-
             if Path::new(original_file).exists() {
                 fs::File::create(format!("{}{}", back_str, original_file))
                     .expect(format!("Failed to create new file: {}", original_file).as_str());
