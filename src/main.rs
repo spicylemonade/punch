@@ -175,19 +175,40 @@ fn move_file(args: &Args) {
     let original_file = Path::new(&args[0]).file_name().unwrap().to_str().unwrap();
     let new_directory = Path::new(&args[1]).file_name().unwrap().to_str().unwrap();
 
-    if !Path::new(new_directory).exists() {
-        println!("Destination directory does not exist, creating new folder.");
-        fs::create_dir(format!("./{}/", new_directory))
-            .expect(format!("Failed to create new directory: ./{}/", new_directory).as_str());
-    }
+    let num_to_back = new_directory.parse::<i8>();
+    match num_to_back {
+        Ok(number) => {
+            let mut back_str = String::new();
+            for _i in 0..number {
+                back_str.push_str("../");
+            }
 
-    if Path::new(original_file).exists() {
-        fs::File::create(format!("./{}/{}", new_directory, original_file))
-            .expect(format!("Failed to create new file: {}", original_file).as_str());
-        fs::copy(original_file, format!("./{}/{}", new_directory, original_file))
-            .expect(format!("Failed to copy file contents: {}", original_file).as_str());
-        fs::remove_file(format!("./{}", original_file))
-            .expect(format!("Failed to delete old file: {}", original_file).as_str());
+
+            if Path::new(original_file).exists() {
+                fs::File::create(format!("{}{}", back_str, original_file))
+                    .expect(format!("Failed to create new file: {}", original_file).as_str());
+                fs::copy(original_file, format!("{}{}", back_str, original_file))
+                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
+                fs::remove_file(format!("{}", original_file))
+                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+            }
+        },
+        Err(_) => {
+            if !Path::new(new_directory).exists() {
+                println!("Destination directory does not exist, creating new folder.");
+                fs::create_dir(format!("./{}/", new_directory))
+                    .expect(format!("Failed to create new directory: ./{}/", new_directory).as_str());
+            }
+        
+            if Path::new(original_file).exists() {
+                fs::File::create(format!("./{}/{}", new_directory, original_file))
+                    .expect(format!("Failed to create new file: {}", original_file).as_str());
+                fs::copy(original_file, format!("./{}/{}", new_directory, original_file))
+                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
+                fs::remove_file(format!("./{}", original_file))
+                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+            }
+        }
     }
 }
 
