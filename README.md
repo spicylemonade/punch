@@ -28,7 +28,7 @@
 
   <h6 align="center">
     🗂️ file and folder management written in rust :page_facing_up:
-   
+
   </h6>
 </div>
 
@@ -38,14 +38,14 @@
 
 ### About punch :bulb:
 
-It can be kind of easy to forget which bash command do what, for folder creation, we have mkdir, for files cat and touch and for deletion we have rm,
+It can be kind of easy to forget which bash command do what, for folder creation, we have `mkdir`, for files `cat` and `touch` and for deletion we have `rm`,
 and each of them has its own flags and ways to append multiple so why not just have one command do it all.
 
-name inspired by the "touch" command 
+Name inspired by the `touch` command
 
 ## commands:
 
-#### :ledger: note -> all commands cand be joined together any number of times<br> 
+#### :ledger: NOTE: all commands can't be joined together any number of times<br>
 * ex: ```punch <flag(optional)> <file or directory_name>  <file or directory_name> ...```
 * ```sh
   punch ./folder1/ file1.txt file2.txt ./folder2 ./folder3 "to create multiple files and folders"
@@ -54,24 +54,24 @@ name inspired by the "touch" command
 #### all directories must start with "./" and end with "/"
 
 * ```sh
-  punch -h "to bring up help"
+  punch --help "to bring up help"
   ```
 * ```sh
   punch <file_name> "to create file"
   ```
 * ```sh
-  punch -dir ./<directory_name>/ "create directory" 
+  punch -r <file1> <file2> "to rename a file"
   ```
-* :bell:(bonus) 
+* :bell:(bonus)
   ```sh
     punch ./<directory_name>/ "to use without -dir flag"
     ```
 * ```sh
   punch -d <file_name> "or"  punch -d ./<directory_name>/ "to delete"
-  ``` 
-* ```sh 
+  ```
+* ```sh
   punch -in ./<target_directory_name>/ <file or directory_name> "creates files inside target directory"
-  ``` 
+  ```
 * ```sh
   punch -din ./<target_directory_name>/ <file or directory_name> "deletes files inside target directory"
   ```
@@ -94,7 +94,7 @@ name inspired by the "touch" command
    ```sh
    git clone https://github.com/spicylemonade/punch.git
    ```
-3. CD into the project 
+3. CD into the project
    ```sh
    cd ./punch
    ```
