@@ -110,6 +110,81 @@ fn delete_files(args: &Args) {
     }
 }
 
+fn rename_file(args: &Args) {
+    let args = args.ren.clone().unwrap();
+    let mut source;
+    if args[0].clone().starts_with('.') {
+        source = current_dir().unwrap()
+    } else {
+        source = PathBuf::new();
+    }
+    let mut buf = PathBuf::new();
+    args[0].clone().split('/').for_each(|path| {
+        if path != "." {
+            buf.push(path)
+        }
+    });
+    source = source.join(buf);
+    let mut to;
+    if args[1].clone().starts_with('.') {
+        to = current_dir().unwrap()
+    } else {
+        to = PathBuf::new();
+    }
+    let mut buf = PathBuf::new();
+    args[1].clone().split('/').for_each(|path| {
+        if path != "." {
+            buf.push(path)
+        }
+    });
+    to = to.join(buf);
+    rename(source, to).expect("Unable to rename");
+}
+
+n move_file(args: &Args) {
+    let args = args.mve.clone().unwrap();
+
+    let original_file = Path::new(&args[0]).file_name().unwrap().to_str().unwrap();
+    let new_directory = Path::new(&args[1]).file_name().unwrap().to_str().unwrap();
+
+    let num_to_back = new_directory.parse::<i8>();
+    match num_to_back {
+        Ok(number) => {
+            let mut back_str = String::new();
+            for _i in 0..number {
+                back_str.push_str("../");
+            }
+
+            if Path::new(original_file).exists() {
+                fs::File::create(format!("{}{}", back_str, original_file))
+                    .expect(format!("Failed to create new file: {}", original_file).as_str());
+                fs::copy(original_file, format!("{}{}", back_str, original_file))
+                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
+                fs::remove_file(format!("{}", original_file))
+                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+            }
+        },
+        Err(_) => {
+            if !Path::new(new_directory).exists() {
+                println!("Destination directory does not exist, creating new folder.");
+                fs::create_dir(format!("./{}/", new_directory))
+                    .expect(format!("Failed to create new directory: ./{}/", new_directory).as_str());
+            }
+
+            if Path::new(original_file).exists() {
+                fs::File::create(format!("./{}/{}", new_directory, original_file))
+                    .expect(format!("Failed to create new file: {}", original_file).as_str());
+                fs::copy(original_file, format!("./{}/{}", new_directory, original_file))
+                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
+                fs::remove_file(format!("./{}", original_file))
+                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+            }
+        } 
+
+}
+
+
+
 fn trash_files(args: &Args) {
     let args = args.trash.clone().unwrap();
     // Check if the .ptrash/ directory exist in ~
