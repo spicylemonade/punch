@@ -1,5 +1,5 @@
-use std::{path::{Path, self, PathBuf}, fs};
-
+use std::path::Path;
+use std::fs;
 use crate::punch;
 
 pub struct Trash<'a>{
