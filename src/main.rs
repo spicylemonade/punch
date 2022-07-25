@@ -3,7 +3,6 @@ use std::fs;
 use std::env::current_dir;
 use std::fs::rename;
 use std::path::{Path, PathBuf};
-
 use clap::Parser;
 
 mod db;
@@ -45,7 +44,11 @@ pub struct Args {
 
     /// Move a file from one directory to another.
     #[clap(short, long, multiple_values = true)]
-    mve: Option<Vec<String>>
+    mve: Option<Vec<String>>,
+
+    /// Lists the files and directories in the current working directory.
+    #[clap(short, long)]
+    list: bool
 }
 
 impl Args {
@@ -66,6 +69,8 @@ impl Args {
             return InputType::Undo;
         } else if let true = self.show {
             return InputType::Show;
+        } else if let true = self.list {
+            return InputType::List;
         } else if let Some(ref args) = self.ren {
             assert!(args.len() == 2, "Expected 2 arguments got {}", args.len());
             return InputType::Rename;
@@ -86,6 +91,7 @@ enum InputType {
     Show,
     Rename,
     Move,
+    List
 }
 
 
@@ -195,6 +201,23 @@ fn move_file(args: &Args) {
     }
 }
 
+fn list_current_directory() {
+    let current_dir = std::env::current_dir();
+    let paths = fs::read_dir(current_dir.unwrap());
+    let paths : Vec<Result<fs::DirEntry, std::io::Error>> = paths.unwrap().collect();
+
+    for path in paths {
+        let path = path.unwrap().file_name();
+        let path = Path::new(path.to_str().unwrap());
+        let mut information = String::new();
+        if path.is_dir() {
+            information.push_str(&format!("<DIRECTORY>"));
+        } else {
+            information.push_str(&format!("     <FILE>"));
+        }
+        println!("{} {}", information, path.to_str().unwrap());
+    }
+}
 
 
 fn trash_files(args: &Args) {
@@ -265,8 +288,10 @@ InputType::DeleteIn => {
             match &&args.mve.clone().unwrap()[1].parse::<i32>() {
                Ok(_) => (),
                Err(_) => db::push(&&args.mve.clone().unwrap(), "Move"), 
-           }  
+            }  
             move_file(&args)
-        }
+        },
+
+        InputType::List => { list_current_directory() }
     }
 }

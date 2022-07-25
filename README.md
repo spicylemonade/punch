@@ -84,6 +84,9 @@ Name inspired by the `touch` command
 * ```sh
   punch -m <file_name> <number_of_moves> "Moves the specified file to the specified directory"
   ```
+* ```sh
+  punch -l "Lists the sub-directories and files in the current working directory"
+  ```
 
 
 ### Built With
