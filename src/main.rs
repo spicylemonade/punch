@@ -1,13 +1,17 @@
-use std::env::current_dir;
-use std::fs::{self, rename};
-use std::path::{Path, PathBuf};
+use std::{
+    env::current_dir,
+    error::Error,
+    fs::{self, rename},
+    path::{Path, PathBuf},
+};
 
 use clap::Parser;
+use opener::open;
 
 mod db;
 mod in_directory;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[clap(trailing_var_arg = true)]
 pub struct Args {
     /// to create file
@@ -35,6 +39,8 @@ pub struct Args {
     /// Renam a file
     #[clap(short, long, value_parser, multiple_values = true)]
     ren: Option<Vec<String>>,
+    #[clap(short, long, value_parser, multiple_values = true)]
+    open: Option<String>,
 }
 
 impl Args {
@@ -56,6 +62,8 @@ impl Args {
         } else if let Some(ref args) = self.ren {
             assert!(args.len() == 2, "Expected 2 arguments got {}", args.len());
             return InputType::Rename;
+        } else if let Some(_) = self.open {
+            return InputType::Open;
         } else {
             unreachable!()
         }
@@ -72,6 +80,7 @@ enum InputType {
     Undo,
     Show,
     Rename,
+    Open,
 }
 
 struct Trash<'a> {
@@ -194,10 +203,15 @@ fn rename_file(args: &Args) {
     to = to.join(buf);
     rename(source, to).expect("Unable to rename");
 }
+#[inline(always)]
+fn open_file(args: &Args) -> Result<(), Box<dyn Error>> {
+    open(Path::new(args.open.as_ref().unwrap()))?;
+    Ok(())
+}
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-
+    dbg!(args.clone());
     match args.input_type() {
         InputType::DeleteIn => {
             in_directory::delete_files_dir(&args);
@@ -228,5 +242,7 @@ fn main() {
 
         InputType::Show => db::show(),
         InputType::Rename => rename_file(&args),
+        InputType::Open => open_file(&args)?,
     }
+    Ok(())
 }
