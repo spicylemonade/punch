@@ -252,8 +252,8 @@ fn main() {
         push to db after for files resulting in a deletion (trash,move,delete,deletein),
         push before*/
 InputType::DeleteIn => {
+            db::push(&&args.din.clone().unwrap(), "DeleteIn");
             in_directory::delete_files_dir(&args); 
-            db::push(&&args.din.clone().unwrap(), "DeleteIn")
         },
 
         InputType::CreateIn => {
@@ -271,9 +271,10 @@ InputType::DeleteIn => {
             db::push(&&args.target, "Create")
         },
 
-        InputType::Trash => { 
+        InputType::Trash => {
+            db::push(&&args.trash.clone().unwrap(), "Trash"); 
             trash_files(&args);
-            db::push(&&args.trash.clone().unwrap(), "Trash");
+            
         },
 
         InputType::Undo => { db::undo()},
