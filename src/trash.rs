@@ -1,4 +1,4 @@
-use std::{path::Path, fs};
+use std::{path::{Path, self, PathBuf}, fs};
 
 use crate::punch;
 
@@ -13,6 +13,19 @@ impl<'a> Trash<'a> {
         }
     }
 
+    pub fn update(&self, path: &'a Path) -> Self {
+        Self {
+            trash_path: path
+        }
+    }
+    // This is to ensure scenarios of punch -t folder/file.txt can be handled
+    pub fn move_(&self, path: &Path){
+        let file_name = path.file_name().unwrap();
+        let trash_path = &Path::new(&self.trash_path).join(file_name);
+      
+        self.update(trash_path);
+        self.move_to_trash(path); 
+    }
     pub fn move_to_trash(&self, path: &Path) {
         if path.is_dir(){
             let entries = fs::read_dir(path).expect("unable to parse directory");
