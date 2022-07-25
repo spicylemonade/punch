@@ -44,7 +44,7 @@ pub struct Args {
     ren: Option<Vec<String>>,
 
     /// Move a file from one directory to another.
-    #[clap(short, long, value_parser, multiple_values = true)]
+    #[clap(short, long, multiple_values = true)]
     mve: Option<Vec<String>>
 }
 
@@ -92,7 +92,7 @@ enum InputType {
 fn create_files(args: &Args) {
     let args = args.target.clone();
     for i in 0..args.len() {
-        if args[i].contains("/") && args[i].ends_with("/") {
+        if args[i].ends_with("/") {
             fs::create_dir_all(&args[i])
                 .expect(format!("error creating folder: {}", args[i]).as_str());
         } else {
@@ -146,41 +146,51 @@ fn rename_file(args: &Args) {
 fn move_file(args: &Args) {
     let args = args.mve.clone().unwrap();
 
-    let original_file = Path::new(&args[0]).file_name().unwrap().to_str().unwrap();
-    let new_directory = Path::new(&args[1]).file_name().unwrap().to_str().unwrap();
+    let original_file = Path::new(&args[0]);
+    let new_directory = Path::new(&args[1]);
 
-    let num_to_back = new_directory.parse::<i8>();
+    //number of directories to go back
+    let num_to_back = new_directory.to_str().unwrap().parse::<i8>();
+
+    //if second input is a number
     match num_to_back {
         Ok(number) => {
             let mut back_str = String::new();
+            //go back a directory for number of times
             for _i in 0..number {
                 back_str.push_str("../");
             }
+            
+            if original_file.exists() {
 
-            if Path::new(original_file).exists() {
-                fs::File::create(format!("{}{}", back_str, original_file))
-                    .expect(format!("Failed to create new file: {}", original_file).as_str());
-                fs::copy(original_file, format!("{}{}", back_str, original_file))
-                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
-                fs::remove_file(format!("{}", original_file))
-                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+                fs::File::create(Path::new(&back_str).join(&original_file.file_name().unwrap()))
+                    .expect(format!("Failed to create new file: {}", original_file.display()).as_str());
+
+                fs::copy(original_file, Path::new(&back_str).join(&original_file.file_name().unwrap()))
+                    .expect(format!("Failed to copy file contents: {}", original_file.display()).as_str());
+
+                fs::remove_file(&original_file)
+                    .expect(format!("Failed to delete old file: {}", original_file.display()).as_str());
             }
         },
         Err(_) => {
-            if !Path::new(new_directory).exists() {
+            if !new_directory.is_dir() {
                 println!("Destination directory does not exist, creating new folder.");
-                fs::create_dir(format!("./{}/", new_directory))
-                    .expect(format!("Failed to create new directory: ./{}/", new_directory).as_str());
+                fs::create_dir_all(&new_directory)
+                    .expect(format!("Failed to create new directory: ./{}/", new_directory.display()).as_str());
             }
+            if original_file.exists(){
 
-            if Path::new(original_file).exists() {
-                fs::File::create(format!("./{}/{}", new_directory, original_file))
-                    .expect(format!("Failed to create new file: {}", original_file).as_str());
-                fs::copy(original_file, format!("./{}/{}", new_directory, original_file))
-                    .expect(format!("Failed to copy file contents: {}", original_file).as_str());
-                fs::remove_file(format!("./{}", original_file))
-                    .expect(format!("Failed to delete old file: {}", original_file).as_str());
+                fs::File::create(&new_directory.join(&original_file.file_name().unwrap()))
+                    .expect(format!("Failed to create new file: {}", original_file.display()).as_str());
+
+                fs::copy(&original_file, &new_directory.join(original_file.file_name().unwrap()))
+                    .expect(format!("Failed to copy file contents: {}", original_file.display()).as_str());
+
+                fs::remove_file(&original_file)
+                    .expect(format!("Failed to delete old file: {}", original_file.display()).as_str());
             }
+        
         } 
     }
 }
@@ -252,7 +262,10 @@ InputType::DeleteIn => {
         InputType::Rename => rename_file(&args),
 
         InputType::Move => {
-            db::push(&&args.mve.clone().unwrap(), "Move");
+            match &&args.mve.clone().unwrap()[1].parse::<i32>() {
+               Ok(_) => (),
+               Err(_) => db::push(&&args.mve.clone().unwrap(), "Move"), 
+           }  
             move_file(&args)
         }
     }
