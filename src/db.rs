@@ -90,7 +90,8 @@ fn u_trash(name: &Path, path: &Path) {
         _ => panic!("Unable to trash files"),
     };
     //check if trashed file is a directory
-    if home_path.join("./punch/trash/").join(name).is_dir() {
+    dbg!(home_path.join(".punch/trash/").join(name));
+    if home_path.join(".punch/trash/").join(Path::new(name)).is_dir() {
         let entries = fs::read_dir(home_path.join(".punch/trash/").join(name))
             .expect("unable to parse directory");
 
@@ -105,7 +106,7 @@ fn u_trash(name: &Path, path: &Path) {
                     } else {
                         fs::copy(
                             home_path
-                                .join(".punch/trash")
+                                .join(".punch/trash/")
                                 .join(&name.join(entry.file_name())),
                             path.join(entry.file_name()),
                         )

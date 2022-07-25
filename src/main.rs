@@ -110,7 +110,7 @@ enum InputType {
 fn create_files(args: &Args) {
     let args = args.target.clone();
     for i in 0..args.len() {
-        if args[i].contains("/") && args[i].ends_with("/") {
+        if args[i].ends_with("/") {
             punch::create_directory(Path::new(&args[i]));
         } else {
             punch::create_file(Path::new(&args[i]));
@@ -120,7 +120,7 @@ fn create_files(args: &Args) {
 fn delete_files(args: &Args) {
     let args = args.del.clone().unwrap();
     for i in 0..args.len() {
-        if args[i].contains("/") && args[i].ends_with("/") {
+        if args[i].ends_with("/") {
             punch::remove_directory(Path::new(&args[i]));
         } else {
             punch::remove_file(Path::new(&args[i]));
@@ -278,7 +278,7 @@ fn open_file(args: &Args) -> Result<(), Box<dyn Error>> {
 }
 
 fn clear_trash() -> Result<(), Box<dyn Error>> {
-    let trash_dir = home::home_dir().unwrap().join(".ptrash/");
+    let trash_dir = home::home_dir().unwrap().join(".punch/trash/");
     for entry in std::fs::read_dir(trash_dir)? {
         let entry = entry?;
         if entry.path().is_dir() {
