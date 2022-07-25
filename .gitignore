@@ -1,1 +1,4 @@
 /target/
+test_dir/*
+
+!test_dir/.gitkeep 
