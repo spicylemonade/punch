@@ -54,7 +54,7 @@ pub struct Args {
     open: Option<String>,
 
     /// clears the trash Directory
-    #[clap(short, long)]
+    #[clap(long)]
     clear: bool,
 }
 

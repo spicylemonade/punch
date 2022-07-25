@@ -90,9 +90,9 @@ fn u_trash(name: &Path, path: &Path) {
         _ => panic!("Unable to trash files"),
     };
     //check if trashed file is a directory
-    if home_path.join("./ptrash").join(name).is_dir() {
-        let entries =
-            fs::read_dir(home_path.join(".ptrash").join(name)).expect("unable to parse directory");
+    if home_path.join("./punch/trash/").join(name).is_dir() {
+        let entries = fs::read_dir(home_path.join(".punch/trash/").join(name))
+            .expect("unable to parse directory");
 
         fs::create_dir_all(path).unwrap();
 
@@ -105,7 +105,7 @@ fn u_trash(name: &Path, path: &Path) {
                     } else {
                         fs::copy(
                             home_path
-                                .join(".ptrash")
+                                .join(".punch/trash")
                                 .join(&name.join(entry.file_name())),
                             path.join(entry.file_name()),
                         )
@@ -115,10 +115,10 @@ fn u_trash(name: &Path, path: &Path) {
             }
         }
     } else {
-        fs::copy(home_path.join(".ptrash").join(name), path).unwrap();
+        fs::copy(home_path.join(".punch/trash/").join(name), path).unwrap();
     }
     //delete file in trash after
-    let trash_file = home_path.join(".ptrash").join(name);
+    let trash_file = home_path.join(".punch/trash/").join(name);
     if trash_file.is_dir() {
         fs::remove_dir_all(&trash_file)
             .expect(format!("error deleting folder: {}", &trash_file.display()).as_str());
