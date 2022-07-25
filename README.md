@@ -77,8 +77,13 @@ Name inspired by the `touch` command
   ```
 * ```sh
   punch -t <file or directory_name> "trashed the specified file or directory"
-```
-
+  ```
+* ```sh
+  punch -m <file_name> ./<directory_name>/ "Moves the specified file to the specified directory"
+  ```
+* ```sh
+  punch -m <file_name> <number_of_moves> "Moves the specified file to the specified directory"
+  ```
 
 
 ### Built With
@@ -105,7 +110,11 @@ Name inspired by the `touch` command
    ##### or
    ```sh
     . ./build.sh
-    ```
+   ```
+   ### For Windows ->
+   ```sh
+    ./build.ps1
+   ```
 
 <p align="right">{<a href="#top">To top</a>}</p>
 
