@@ -1,11 +1,11 @@
+use clap::Parser;
+use opener::open;
 use std::{
     env::current_dir,
     error::Error,
     fs::{self, rename},
     path::{Path, PathBuf},
 };
-use clap::Parser;
-use opener::open;
 
 mod db;
 mod in_directory;
@@ -31,10 +31,10 @@ pub struct Args {
     /// send the file to trash can
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
-
+    /// undoes last create or trash
     #[clap(short, long)]
     undo: bool,
-
+    /// prints out creation,deletion, and trash history
     #[clap(short, long)]
     show: bool,
     /// Renam a file
@@ -48,10 +48,14 @@ pub struct Args {
     /// Lists the files and directories in the current working directory.
     #[clap(short, long)]
     list: bool,
-    
+
+    /// Opens file with default application
     #[clap(short, long, value_parser, multiple_values = true)]
     open: Option<String>,
 
+    /// clears the trash Directory
+    #[clap(short, long)]
+    clear: bool,
 }
 
 impl Args {
@@ -79,6 +83,8 @@ impl Args {
             return InputType::Rename;
         } else if let Some(_) = self.open {
             return InputType::Open;
+        } else if let true = self.clear {
+            return InputType::Clear;
         } else {
             unreachable!()
         }
@@ -98,6 +104,7 @@ enum InputType {
     Move,
     List,
     Open,
+    Clear,
 }
 
 fn create_files(args: &Args) {
@@ -114,9 +121,9 @@ fn delete_files(args: &Args) {
     let args = args.del.clone().unwrap();
     for i in 0..args.len() {
         if args[i].contains("/") && args[i].ends_with("/") {
-            punch::remove_directory(Path::new(&args[i])); 
+            punch::remove_directory(Path::new(&args[i]));
         } else {
-            punch::remove_file(Path::new(&args[i])); 
+            punch::remove_file(Path::new(&args[i]));
         }
     }
 }
@@ -169,45 +176,62 @@ fn move_file(args: &Args) {
             for _i in 0..number {
                 back_str.push_str("../");
             }
-            
+
             if original_file.exists() {
-
                 fs::File::create(Path::new(&back_str).join(&original_file.file_name().unwrap()))
-                    .expect(format!("Failed to create new file: {}", original_file.display()).as_str());
+                    .expect(
+                        format!("Failed to create new file: {}", original_file.display()).as_str(),
+                    );
 
-                fs::copy(original_file, Path::new(&back_str).join(&original_file.file_name().unwrap()))
-                    .expect(format!("Failed to copy file contents: {}", original_file.display()).as_str());
+                fs::copy(
+                    original_file,
+                    Path::new(&back_str).join(&original_file.file_name().unwrap()),
+                )
+                .expect(
+                    format!("Failed to copy file contents: {}", original_file.display()).as_str(),
+                );
 
-                fs::remove_file(&original_file)
-                    .expect(format!("Failed to delete old file: {}", original_file.display()).as_str());
+                fs::remove_file(&original_file).expect(
+                    format!("Failed to delete old file: {}", original_file.display()).as_str(),
+                );
             }
-        },
+        }
         Err(_) => {
             if !new_directory.is_dir() {
                 println!("Destination directory does not exist, creating new folder.");
-                fs::create_dir_all(&new_directory)
-                    .expect(format!("Failed to create new directory: ./{}/", new_directory.display()).as_str());
+                fs::create_dir_all(&new_directory).expect(
+                    format!(
+                        "Failed to create new directory: ./{}/",
+                        new_directory.display()
+                    )
+                    .as_str(),
+                );
             }
-            if original_file.exists(){
+            if original_file.exists() {
+                fs::File::create(&new_directory.join(&original_file.file_name().unwrap())).expect(
+                    format!("Failed to create new file: {}", original_file.display()).as_str(),
+                );
 
-                fs::File::create(&new_directory.join(&original_file.file_name().unwrap()))
-                    .expect(format!("Failed to create new file: {}", original_file.display()).as_str());
+                fs::copy(
+                    &original_file,
+                    &new_directory.join(original_file.file_name().unwrap()),
+                )
+                .expect(
+                    format!("Failed to copy file contents: {}", original_file.display()).as_str(),
+                );
 
-                fs::copy(&original_file, &new_directory.join(original_file.file_name().unwrap()))
-                    .expect(format!("Failed to copy file contents: {}", original_file.display()).as_str());
-
-                fs::remove_file(&original_file)
-                    .expect(format!("Failed to delete old file: {}", original_file.display()).as_str());
+                fs::remove_file(&original_file).expect(
+                    format!("Failed to delete old file: {}", original_file.display()).as_str(),
+                );
             }
-        
-        } 
+        }
     }
 }
 
 fn list_current_directory() {
     let current_dir = std::env::current_dir();
     let paths = fs::read_dir(current_dir.unwrap());
-    let paths : Vec<Result<fs::DirEntry, std::io::Error>> = paths.unwrap().collect();
+    let paths: Vec<Result<fs::DirEntry, std::io::Error>> = paths.unwrap().collect();
 
     for path in paths {
         let path = path.unwrap().file_name();
@@ -221,7 +245,6 @@ fn list_current_directory() {
         println!("{} {}", information, path.to_str().unwrap());
     }
 }
-
 
 fn trash_files(args: &Args) {
     let args = args.trash.clone().unwrap();
@@ -241,34 +264,44 @@ fn trash_files(args: &Args) {
     }
     // Move files for directories to trash
     // TODO: check if the user has the appropriate permission to move the files
-    for i in 0..args.len(){
-        let file = Path::new(&args[i]); 
+    for i in 0..args.len() {
+        let file = Path::new(&args[i]);
         //TODO: handle trashing files/directories in another directory e.g punch -t test/file1.txt -- This should remove the file
         trash.move_(file); // First Part
         trash.remove_from_source(file); // Second Part
     }
-}   
+}
 #[inline(always)]
 fn open_file(args: &Args) -> Result<(), Box<dyn Error>> {
     open(Path::new(args.open.as_ref().unwrap()))?;
     Ok(())
+}
 
+fn clear_trash() -> Result<(), Box<dyn Error>> {
+    let trash_dir = home::home_dir().unwrap().join(".ptrash/");
+    for entry in std::fs::read_dir(trash_dir)? {
+        let entry = entry?;
+        if entry.path().is_dir() {
+            punch::remove_directory(entry.path().as_path());
+        } else {
+            punch::remove_file(entry.path().as_path());
+        }
+    }
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-    dbg!(args.clone());
-    match args.input_type() {
 
+    match args.input_type() {
         //order matters for pushing to the database
         /*for files that result increating in current dir
         push to db after for files resulting in a deletion (trash,move,delete,deletein),
         push before*/
         InputType::DeleteIn => {
             db::push(&&args.din.clone().unwrap(), "DeleteIn");
-            in_directory::delete_files_dir(&args); 
-        },
-
+            in_directory::delete_files_dir(&args);
+        }
 
         InputType::CreateIn => {
             in_directory::create_in_dir(&args);
@@ -276,8 +309,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         InputType::Del => {
+            db::push(&&args.del.clone().unwrap(), "Delete");
             delete_files(&args);
-            db::push(&&args.del.clone().unwrap(), "Delete")
         }
 
         InputType::Create => {
@@ -286,26 +319,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         InputType::Trash => {
-            db::push(&&args.trash.clone().unwrap(), "Trash"); 
+            db::push(&&args.trash.clone().unwrap(), "Trash");
             trash_files(&args);
-            
-        },
+        }
 
         InputType::Undo => db::undo(),
 
         InputType::Show => db::show(),
+
         InputType::Rename => rename_file(&args),
 
-        InputType::Move => {
-            match &&args.mve.clone().unwrap()[1].parse::<i32>() {
-               Ok(_) => (),
-               Err(_) => db::push(&&args.mve.clone().unwrap(), "Move"), 
-            }  
-            move_file(&args);
-        },
-        InputType::List => { list_current_directory() },
+        InputType::Move => move_file(&args),
+
+        InputType::List => list_current_directory(),
 
         InputType::Open => open_file(&args)?,
+
+        InputType::Clear => clear_trash()?,
     }
     Ok(())
 }
