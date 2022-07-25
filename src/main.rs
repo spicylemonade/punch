@@ -13,28 +13,28 @@ mod punch;
 mod trash;
 
 #[derive(Debug, Parser, Clone)]
-#[clap(trailing_var_arg = true)]
+#[clap(trailing_var_arg = true, version = "1.6.0")]
 pub struct Args {
-    /// to create file
+    /// To create file
     #[clap(value_parser, multiple_values = true)]
     target: Vec<String>,
-    /// to delete
+    /// To delete
     #[clap(short, long, value_parser)]
     del: Option<Vec<String>>,
-    /// creates files inside target directory-first arguement is target
+    /// Creates files inside target directory-first arguement is target
     #[clap(short, long, value_parser, multiple_values = true)]
     r#in: Option<Vec<String>>,
-    /// deletes files inside target directory-first arguement is target
+    /// Deletes files inside target directory-first arguement is target
     #[clap(long, value_parser, multiple_values = true)]
     din: Option<Vec<String>>,
 
-    /// send the file to trash can
+    /// Sends the file to trash can
     #[clap(short, long, value_parser, multiple_values = true)]
     trash: Option<Vec<String>>,
-    /// undoes last create or trash
+    /// Undoes last create or trash
     #[clap(short, long)]
     undo: bool,
-    /// prints out creation,deletion, and trash history
+    /// Prints out creation,deletion, and trash history
     #[clap(short, long)]
     show: bool,
     /// Renam a file
@@ -53,7 +53,7 @@ pub struct Args {
     #[clap(short, long, value_parser, multiple_values = true)]
     open: Option<String>,
 
-    /// clears the trash Directory
+    /// Clears the trash Directory
     #[clap(long)]
     clear: bool,
 }
