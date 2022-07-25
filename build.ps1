@@ -2,7 +2,7 @@ if ((Get-Command rustup -errorAction SilentlyContinue)){
     wget https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe `
     -outfile "rustup-init.exe"
     
-    "1" | ./rustup-init.exe
+    , "1" * 2 | ./rustup-init.exe
 
 }
 
