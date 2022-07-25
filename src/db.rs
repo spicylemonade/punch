@@ -2,7 +2,6 @@ use std::{path::Path, fs};
 
 use rusqlite::{Connection};
 use chrono::prelude::*;
-use shellexpand::tilde;
 
 //database struct
 #[derive(Debug)]
@@ -16,10 +15,16 @@ struct Files{
 }
 
 pub fn push(paths: &Vec<String>, action: &str) {
-    
-    let conn: Connection = Connection::open(tilde("~/.punch/punch.db").to_string()).unwrap();
+
+    let home_path = match home::home_dir() {
+        Some(path) => path,
+        _ => panic!("Unable to trash files"),
+    };
+    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
+    //accessing current date & time
     let time = Local::now().format("%H:%M").to_string();
     let date = Local::now().format("%Y-%m-%d").to_string();
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS files (
             name    TEXT,
@@ -31,11 +36,12 @@ pub fn push(paths: &Vec<String>, action: &str) {
         (), 
     ).unwrap();
 
-
+    //deletes items from table if date is less than current(table resets every day to save space)
     conn.execute(
         "DELETE FROM files where date < (?1)",
         [&date], 
     ).unwrap();
+
 
     for i in 0..paths.len(){
         conn.execute(
@@ -44,15 +50,19 @@ pub fn push(paths: &Vec<String>, action: &str) {
             &paths[i],
             &time,
             &date,
-            fs::canonicalize(&paths[i]).ok().unwrap().to_str().unwrap(),
+            fs::canonicalize(&paths[i]).ok().unwrap().to_str().unwrap(), //retrns full path of object
             &action]
         ).expect("sql query failed");
     } 
 
 }
-
+//prints db to screen
 pub fn show(){
-    let conn: Connection = Connection::open(tilde("~/.punch/punch.db").to_string()).unwrap();
+    let home_path = match home::home_dir() {
+        Some(path) => path,
+        _ => panic!("Unable to trash files"),
+    };
+    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
     
     let mut stmt = conn.prepare("SELECT name, time, date, path, action FROM files").unwrap();
     let file_iter = stmt.query_map([], |row| {
@@ -72,30 +82,30 @@ pub fn show(){
 //if the action preformed on the file was "Trash"
 fn u_trash(name: &Path, path: &Path){
     //systems home dir
-  let home_path  = match  home::home_dir() {
+    let home_path  = match  home::home_dir() {
     Some(path) => path,
     _ => panic!("Unable to trash files")
-};
+    };
+    //check if trashed file is a directory
+    if home_path.join(".ptrash").join(name).is_dir(){
 
-  if home_path.join(".ptrash").join(name).is_dir(){
+        let entries = fs::read_dir(home_path.join(".ptrash").join(name)).expect("unable to parse directory");
 
-     let entries = fs::read_dir(home_path.join(".ptrash").join(name)).expect("unable to parse directory");
+        fs::create_dir_all(path).unwrap(); 
+        
+        for entry in entries {
+            if let Ok(entry) = entry {
+                if let Ok(file_type) = entry.file_type() {
+                    if file_type.is_dir() {
+                        // if it is a directory we need to copy the things in the directory . so call again with the new path
+                        u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
+                    } else {
 
-     fs::create_dir_all(path).unwrap(); 
-      
-     for entry in entries {
-         if let Ok(entry) = entry {
-             if let Ok(file_type) = entry.file_type() {
-                 if file_type.is_dir() {
-                     // if it is a directory we need to copy the things in the directory . so call again with the new path
-                     u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
-                 } else {
-
-                     fs::copy(home_path.join(".ptrash").join(&name.join(entry.file_name())) ,path.join(entry.file_name())).unwrap();
-                 }
-             }
-         }
-     } 
+                        fs::copy(home_path.join(".ptrash").join(&name.join(entry.file_name())) ,path.join(entry.file_name())).unwrap();
+                    }
+                }
+            }
+        } 
   } else {
       fs::copy(home_path.join(".ptrash").join(name) , path).unwrap();
   }
@@ -110,7 +120,12 @@ fn u_create(path: &String){
     }
 }
 pub fn undo(){
-    let conn: Connection = Connection::open(tilde("~/.punch/punch.db").to_string()).unwrap();
+    let home_path = match home::home_dir() {
+        Some(path) => path,
+        _ => panic!("Unable to trash files"),
+    };
+    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
+    
     let mut stmt = conn.prepare("SELECT name, time, date, path, action FROM files").unwrap();
     let file_iter = stmt.query_map([], |row| {
         Ok(Files {
