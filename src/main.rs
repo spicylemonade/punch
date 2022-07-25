@@ -198,15 +198,17 @@ fn trash_files(args: &Args) {
     let trash_path = home_path.join(Path::new(".punch/trash"));
     let trash = trash::Trash::new(&trash_path);
 
-    if !trash.trash_path.exists() {
+    if !trash_path.exists() {
         // Path Does not Exists
         // Create the Directory
-        fs::create_dir(trash.trash_path).expect(format!("error creating trash can").as_str())
+        fs::create_dir(&trash_path).expect(format!("error creating trash can").as_str())
     }
-    // Move files for directories to crash
+    // Move files for directories to trash
+    // TODO: check if the user has the appropriate permission to move the files
     for i in 0..args.len(){
         let file = Path::new(&args[i]); 
-        trash.move_to_trash(file); // First Part
+        //TODO: handle trashing files/directories in another directory e.g punch -t test/file1.txt -- This should remove the file
+        trash.move_(file); // First Part
         trash.remove_from_source(file); // Second Part
     }
 }
