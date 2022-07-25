@@ -110,7 +110,11 @@ Name inspired by the `touch` command
    ##### or
    ```sh
     . ./build.sh
-    ```
+   ```
+   ### For Windows ->
+   ```sh
+    ./build.ps1
+   ```
 
 <p align="right">{<a href="#top">To top</a>}</p>
 
