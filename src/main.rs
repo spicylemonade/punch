@@ -56,8 +56,8 @@ pub struct Args {
     /// Clears the trash Directory
     #[clap(long)]
     clear: bool,
-
-    #[clap(long)]
+    ///deletes specific file name from database
+    #[clap(long, help_heading = "EXTRA")]
     db_delete: Option<String>,
 }
 
