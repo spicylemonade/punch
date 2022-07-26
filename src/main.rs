@@ -120,7 +120,7 @@ fn create_files(args: &Args) {
 fn delete_files(args: &Args) {
     let args = args.del.clone().unwrap();
     for i in 0..args.len() {
-        if args[i].ends_with("/") {
+        if Path::new(&args[i]).is_dir() {
             punch::remove_directory(Path::new(&args[i]));
         } else {
             punch::remove_file(Path::new(&args[i]));
@@ -271,34 +271,34 @@ fn move_file(args: &Args) {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
-
+    let current_dir = &std::env::current_dir().unwrap();
     match args.input_type() {
         //order matters for pushing to the database
         /*for files that result increating in current dir
         push to db after for files resulting in a deletion (trash,move,delete,deletein),
         push before*/
         InputType::DeleteIn => {
-            db::push(&&args.din.clone().unwrap(), "DeleteIn");
+            db::push(&&args.din.clone().unwrap(), "DeleteIn", current_dir);
             in_directory::delete_files_dir(&args);
         }
 
         InputType::CreateIn => {
             in_directory::create_in_dir(&args);
-            db::push(&&args.r#in.clone().unwrap(), "CreateIn")
+            db::push(&&args.r#in.clone().unwrap(), "CreateIn", current_dir)
         }
 
         InputType::Del => {
-            db::push(&&args.del.clone().unwrap(), "Delete");
+            db::push(&&args.del.clone().unwrap(), "Delete", current_dir);
             delete_files(&args);
         }
 
         InputType::Create => {
             create_files(&args);
-            db::push(&&args.target, "Create")
+            db::push(&&args.target, "Create", current_dir)
         }
 
         InputType::Trash => {
-            db::push(&&args.trash.clone().unwrap(), "Trash");
+            db::push(&&args.trash.clone().unwrap(), "Trash", current_dir);
             trash_files(&args);
         }
 
