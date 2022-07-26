@@ -165,3 +165,9 @@ pub fn undo() {
         u_trash(Path::new(&latest_file._name), Path::new(&latest_file._path));
     }
 }
+
+pub fn delete(name: String) {
+    let conn = db_connect!(".punch/punch.db", conn);
+    conn.execute("DELETE FROM files WHERE name=(?1)", [&name])
+        .unwrap();
+}
