@@ -59,6 +59,9 @@ pub struct Args {
     ///deletes specific file name from database
     #[clap(long, help_heading = "EXTRA")]
     db_delete: Option<String>,
+
+    #[clap(long, help_heading = "EXTRA", multiple_values = true)]
+    sizeof: Option<Vec<String>>,
 }
 
 impl Args {
@@ -90,6 +93,8 @@ impl Args {
             return InputType::Clear;
         } else if let Some(_) = self.db_delete {
             return InputType::Dbdelete;
+        } else if let Some(_) = self.sizeof {
+            return InputType::Sizeof;
         } else {
             unreachable!()
         }
@@ -111,6 +116,7 @@ enum InputType {
     Open,
     Clear,
     Dbdelete,
+    Sizeof,
 }
 
 fn create_files(args: &Args) {
@@ -234,45 +240,54 @@ fn clear_trash() -> Result<(), Box<dyn Error>> {
 fn move_file(args: &Args) {
     let args = args.mve.clone().unwrap();
 
-    let mut destination = String::from(&args[args.len() -1]);       // Getting the destination arg.
+    let mut destination = String::from(&args[args.len() - 1]); // Getting the destination arg.
     let num_to_back = destination.parse::<i8>(); // If the final arg is a number we are going back.
     match num_to_back {
         Ok(number) => {
             destination.clear();
             for _i in 0..number {
-                destination.push_str("../");                        // Depending on the number we go back x amount of times.
+                destination.push_str("../"); // Depending on the number we go back x amount of times.
             }
         }
         Err(_) => {}
     }
 
-    let destination = Path::new(&destination);                      // Convert our formatted destination into type Path.
+    let destination = Path::new(&destination); // Convert our formatted destination into type Path.
 
-    let mut files: Vec<String> = Vec::new();                               // We create a vector of all files/args except for the last one which is the destination.
+    let mut files: Vec<String> = Vec::new(); // We create a vector of all files/args except for the last one which is the destination.
     for i in 0..args.len() - 1 {
         files.push(String::from(&args[i]));
     }
 
-    for file in files {                                            // For every file we have listed we make a new one in the new directory,
-        let file = Path::new(&file);                                // copy the contents form the old to the new, and delete the old file.
+    for file in files {
+        // For every file we have listed we make a new one in the new directory,
+        let file = Path::new(&file); // copy the contents form the old to the new, and delete the old file.
         if file.exists() {
-            fs::File::create(&destination.join(&file.file_name().unwrap())).expect(
-                format!("Failed to create new file: {}", file.display()).as_str(),
-            );
+            fs::File::create(&destination.join(&file.file_name().unwrap()))
+                .expect(format!("Failed to create new file: {}", file.display()).as_str());
 
-            fs::copy(
-              &file,
-                &destination.join(file.file_name().unwrap()),
-            )
-            .expect(
-                format!("Failed to copy file contents: {}", file.display()).as_str(),
-            );
+            fs::copy(&file, &destination.join(file.file_name().unwrap()))
+                .expect(format!("Failed to copy file contents: {}", file.display()).as_str());
 
-            fs::remove_file(&file).expect(
-                format!("Failed to delete old file: {}", file.display()).as_str(),
-            );
+            fs::remove_file(&file)
+                .expect(format!("Failed to delete old file: {}", file.display()).as_str());
         }
     }
+}
+
+fn sizeof(args: &Args) -> Result<(), Box<dyn Error>> {
+    let args = args.sizeof.clone().unwrap();
+    for i in 0..args.len() {
+        print!("{}: ", &args[i]);
+        println!("{:#} bytes", fs::metadata(Path::new(&args[i]))?.len());
+
+        println!(
+            "{:#} kb",
+            fs::metadata(Path::new(&args[i]))?.len() as f64 / 1000.0
+        );
+    }
+
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -323,6 +338,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         InputType::Clear => clear_trash()?,
 
         InputType::Dbdelete => db::delete(args.db_delete.unwrap()),
+
+        InputType::Sizeof => sizeof(&args)?,
     }
     Ok(())
 }
