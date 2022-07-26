@@ -159,75 +159,6 @@ fn rename_file(args: &Args) {
     rename(source, to).expect("Unable to rename");
 }
 
-fn move_file(args: &Args) {
-    let args = args.mve.clone().unwrap();
-
-    let original_file = Path::new(&args[0]);
-    let new_directory = Path::new(&args[1]);
-
-    //number of directories to go back
-    let num_to_back = new_directory.to_str().unwrap().parse::<i8>();
-
-    //if second input is a number
-    match num_to_back {
-        Ok(number) => {
-            let mut back_str = String::new();
-            //go back a directory for number of times
-            for _i in 0..number {
-                back_str.push_str("../");
-            }
-
-            if original_file.exists() {
-                fs::File::create(Path::new(&back_str).join(&original_file.file_name().unwrap()))
-                    .expect(
-                        format!("Failed to create new file: {}", original_file.display()).as_str(),
-                    );
-
-                fs::copy(
-                    original_file,
-                    Path::new(&back_str).join(&original_file.file_name().unwrap()),
-                )
-                .expect(
-                    format!("Failed to copy file contents: {}", original_file.display()).as_str(),
-                );
-
-                fs::remove_file(&original_file).expect(
-                    format!("Failed to delete old file: {}", original_file.display()).as_str(),
-                );
-            }
-        }
-        Err(_) => {
-            if !new_directory.is_dir() {
-                println!("Destination directory does not exist, creating new folder.");
-                fs::create_dir_all(&new_directory).expect(
-                    format!(
-                        "Failed to create new directory: ./{}/",
-                        new_directory.display()
-                    )
-                    .as_str(),
-                );
-            }
-            if original_file.exists() {
-                fs::File::create(&new_directory.join(&original_file.file_name().unwrap())).expect(
-                    format!("Failed to create new file: {}", original_file.display()).as_str(),
-                );
-
-                fs::copy(
-                    &original_file,
-                    &new_directory.join(original_file.file_name().unwrap()),
-                )
-                .expect(
-                    format!("Failed to copy file contents: {}", original_file.display()).as_str(),
-                );
-
-                fs::remove_file(&original_file).expect(
-                    format!("Failed to delete old file: {}", original_file.display()).as_str(),
-                );
-            }
-        }
-    }
-}
-
 fn list_current_directory() {
     let current_dir = std::env::current_dir();
     let paths = fs::read_dir(current_dir.unwrap());
@@ -237,12 +168,16 @@ fn list_current_directory() {
         let path = path.unwrap().file_name();
         let path = Path::new(path.to_str().unwrap());
         let mut information = String::new();
+
+        // Formatting
+        // Directory or file, adding to the final printed information.
         if path.is_dir() {
-            information.push_str(&format!("<DIRECTORY>"));
+            information.push_str(&format!("<DIRECTORY> "));
         } else {
-            information.push_str(&format!("     <FILE>"));
+            information.push_str(&format!("     <FILE> "));
         }
-        println!("{} {}", information, path.to_str().unwrap());
+
+        println!("{}{}", information, path.to_str().unwrap());
     }
 }
 
@@ -288,6 +223,50 @@ fn clear_trash() -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+fn move_file(args: &Args) {
+    let args = args.mve.clone().unwrap();
+
+    let mut destination = String::from(&args[args.len() -1]);       // Getting the destination arg.
+    let num_to_back = destination.parse::<i8>(); // If the final arg is a number we are going back.
+    match num_to_back {
+        Ok(number) => {
+            destination.clear();
+            for _i in 0..number {
+                destination.push_str("../");                        // Depending on the number we go back x amount of times.
+            }
+        }
+        Err(_) => {}
+    }
+
+    let destination = Path::new(&destination);                      // Convert our formatted destination into type Path.
+
+    let mut files: Vec<String> = Vec::new();                               // We create a vector of all files/args except for the last one which is the destination.
+    for i in 0..args.len() - 1 {
+        files.push(String::from(&args[i]));
+    }
+
+    for file in files {                                            // For every file we have listed we make a new one in the new directory,
+        let file = Path::new(&file);                                // copy the contents form the old to the new, and delete the old file.
+        if file.exists() {
+            fs::File::create(&destination.join(&file.file_name().unwrap())).expect(
+                format!("Failed to create new file: {}", file.display()).as_str(),
+            );
+
+            fs::copy(
+              &file,
+                &destination.join(file.file_name().unwrap()),
+            )
+            .expect(
+                format!("Failed to copy file contents: {}", file.display()).as_str(),
+            );
+
+            fs::remove_file(&file).expect(
+                format!("Failed to delete old file: {}", file.display()).as_str(),
+            );
+        }
+    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
