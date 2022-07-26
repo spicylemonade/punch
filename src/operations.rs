@@ -222,6 +222,12 @@ pub fn sizeof(args: &Args) -> Result<()> {
             return Err(PunchError::ReadFileError(String::from(&args[i])).into()).into();
         } else {
             println!("{:#} Kb", dir::get_size(&args[i])? as f64 / 1000.0);
+            if dir::get_size(&args[i])? as f64 / 1000.0 > 1000000.0 {
+                println!(
+                    "-> {:#} Gb",
+                    (dir::get_size(&args[i])? as f64 / 1000.0) / 1000000.0
+                );
+            }
         }
     }
 

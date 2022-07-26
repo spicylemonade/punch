@@ -54,7 +54,7 @@ pub struct Args {
     ///deletes specific file name from database
     #[clap(long, help_heading = "EXTRA")]
     db_delete: Option<String>,
-
+    ///returns size of file or directory
     #[clap(long, help_heading = "EXTRA", multiple_values = true)]
     sizeof: Option<Vec<String>>,
 }
