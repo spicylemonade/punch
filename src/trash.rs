@@ -18,7 +18,6 @@ impl<'a> Trash<'a> {
     pub fn move_(&self, path: &Path) {
         let file_name = path.file_name().unwrap();
         let trash_path = &Path::new(&self.trash_path).join(file_name);
-
         self.update(trash_path);
         self.move_to_trash(path);
     }

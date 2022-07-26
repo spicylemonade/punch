@@ -1,7 +1,49 @@
 use chrono::prelude::*;
 use rusqlite::Connection;
-use std::{fs, path::Path};
+use std::fs;
+use std::path::Path;
 use tabled::{Table, Tabled};
+
+use crate::punch;
+macro_rules! db_connect {
+    ($db_file:expr, conn) => {{
+        let home_path = match home::home_dir() {
+            Some(path) => path,
+            _ => panic!("Unable to trash files"),
+        };
+        Connection::open(home_path.join(Path::new($db_file))).unwrap()
+    }};
+    ($db_file:expr, pull) => {{
+        let home_path = match home::home_dir() {
+            Some(path) => path,
+            _ => panic!("Unable to trash files"),
+        };
+        let conn = Connection::open(home_path.join(Path::new($db_file))).unwrap();
+
+        let mut stmt = conn
+            .prepare("SELECT name, time, date, path, action FROM files")
+            .unwrap();
+
+        let x = stmt
+            .query_map([], |row| {
+                Ok(Files {
+                    _name: row.get(0)?,
+                    _time: row.get(1)?,
+                    _date: row.get(2)?,
+                    _path: row.get(3)?,
+                    _action: row.get(4)?,
+                })
+            })
+            .unwrap();
+
+        let mut table_vector: Vec<Files> = Vec::new();
+        for file in x {
+            table_vector.push(file.unwrap() as Files);
+        }
+
+        table_vector
+    }};
+}
 
 //database struct
 #[derive(Debug, Tabled)]
@@ -13,14 +55,12 @@ struct Files {
     _action: String,
 }
 
-pub fn push(paths: &Vec<String>, action: &str) {
-    let home_path = match home::home_dir() {
-        Some(path) => path,
-        _ => panic!("Unable to trash files"),
-    };
-    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
+pub fn push(paths: &Vec<String>, action: &str, current_dir: &Path) {
     //accessing current date & time
+    let conn = db_connect!(".punch/punch.db", conn);
+
     let time = Local::now().format("%H:%M").to_string();
+
     let date = Local::now().format("%Y-%m-%d").to_string();
 
     conn.execute(
@@ -46,8 +86,8 @@ pub fn push(paths: &Vec<String>, action: &str) {
                 &paths[i],
                 &time,
                 &date,
-                fs::canonicalize(&paths[i]).ok().unwrap().to_str().unwrap(), //retrns full path of object
-                &action,
+                current_dir.to_str().unwrap(), //retrns full path of object
+                action,
             ],
         )
         .expect("sql query failed");
@@ -55,111 +95,72 @@ pub fn push(paths: &Vec<String>, action: &str) {
 }
 //prints db to screen
 pub fn show() {
-    let home_path = match home::home_dir() {
-        Some(path) => path,
-        _ => panic!("Unable to trash files"),
-    };
-    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
+    let table_vector = db_connect!(".punch/punch.db", pull);
 
-    let mut stmt = conn
-        .prepare("SELECT name, time, date, path, action FROM files")
-        .unwrap();
-    let file_iter = stmt
-        .query_map([], |row| {
-            Ok(Files {
-                _name: row.get(0)?,
-                _time: row.get(1)?,
-                _date: row.get(2)?,
-                _path: row.get(3)?,
-                _action: row.get(4)?,
-            })
-        })
-        .unwrap();
-    let mut table_vector: Vec<Files> = Vec::new();
-    for file in file_iter {
-        table_vector.push(file.unwrap() as Files);
-    }
     println!("{}", Table::new(table_vector).to_string());
 }
 
 //if the action preformed on the file was "Trash"
 fn u_trash(name: &Path, path: &Path) {
     //systems home dir
+    //check if trashed file is a directory
     let home_path = match home::home_dir() {
         Some(path) => path,
         _ => panic!("Unable to trash files"),
     };
-    //check if trashed file is a directory
-    if home_path.join(".punch/trash/").join(Path::new(name)).is_dir() {
+    let trash_file = home_path.join(".punch/trash/").join(name);
+
+    if trash_file.is_dir() {
         let entries = fs::read_dir(home_path.join(".punch/trash/").join(name))
             .expect("unable to parse directory");
 
-        fs::create_dir_all(path).unwrap();
+        punch::create_directory(path);
 
         for entry in entries {
             if let Ok(entry) = entry {
-                if let Ok(file_type) = entry.file_type() {
-                    if file_type.is_dir() {
-                        // if it is a directory we need to copy the things in the directory . so call again with the new path
-                        u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
-                    } else {
-                        fs::copy(
-                            home_path
-                                .join(".punch/trash/")
-                                .join(&name.join(entry.file_name())),
-                            path.join(entry.file_name()),
-                        )
-                        .unwrap();
-                    }
+                let file_type = entry.file_type().ok().unwrap();
+                if file_type.is_dir() {
+                    u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
+                } else {
+                    punch::move_file(
+                        &home_path
+                            .join(".punch/trash/")
+                            .join(&name.join(entry.file_name())),
+                        &path.join(entry.file_name()),
+                    );
                 }
             }
         }
     } else {
-        fs::copy(home_path.join(".punch/trash/").join(name), path).unwrap();
+        punch::move_file(
+            &home_path.join(".punch/trash/").join(name),
+            &path.join(name),
+        );
     }
     //delete file in trash after
-    let trash_file = home_path.join(".punch/trash/").join(name);
+
     if trash_file.is_dir() {
-        fs::remove_dir_all(&trash_file)
-            .expect(format!("error deleting folder: {}", &trash_file.display()).as_str());
+        punch::remove_directory(&trash_file);
     } else {
         fs::remove_file(&trash_file)
             .expect(format!("error deleting file: {}", &trash_file.display()).as_str());
     }
 }
 //if the action preformed on the file was "Create"
-fn u_create(path: &String) {
-    if (Path::new(path)).is_dir() {
-        fs::remove_dir_all(path).expect(format!("error deleting folder: {}", path).as_str());
+fn u_create(name: &Path, path: &Path) {
+    if (path.join(name)).is_dir() {
+        punch::remove_directory(path.join(name).as_path());
     } else {
-        fs::remove_file(path).expect(format!("error deleting file: {}", path).as_str());
+        punch::remove_file(path.join(name).as_path());
     }
 }
 pub fn undo() {
-    let home_path = match home::home_dir() {
-        Some(path) => path,
-        _ => panic!("Unable to trash files"),
-    };
-    let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
+    let file_iter = db_connect!(".punch/punch.db", pull);
 
-    let mut stmt = conn
-        .prepare("SELECT name, time, date, path, action FROM files")
-        .unwrap();
-    let file_iter = stmt
-        .query_map([], |row| {
-            Ok(Files {
-                _name: row.get(0)?,
-                _time: row.get(1)?,
-                _date: row.get(2)?,
-                _path: row.get(3)?,
-                _action: row.get(4)?,
-            })
-        })
-        .unwrap();
-    let latest_file = file_iter.last().unwrap().ok().unwrap();
+    let latest_file = file_iter.last().unwrap();
 
     if latest_file._action == "Create" {
-        u_create(&latest_file._path);
+        u_create(Path::new(&latest_file._name), Path::new(&latest_file._path));
     } else if latest_file._action == "Trash" {
         u_trash(Path::new(&latest_file._name), Path::new(&latest_file._path));
     }
