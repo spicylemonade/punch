@@ -20,6 +20,8 @@ pub enum PunchError{
     TrashCanError,
     #[error("Can not find trash can in default path")]
     TrashNotFound,
+    #[error("Can not move file from {0} to {1}")]
+    MoveFielError(String, String),
     #[error("Some Db Error Occured")]
-    DbError,
+    _DbError,
 }

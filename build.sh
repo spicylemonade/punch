@@ -26,22 +26,24 @@ cargo build  --release \
 
 mv ./target/release/punch ~/.punch/bin/
 
-{
-    printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
-    && printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
-    && . ~/.zshrc \
-    && . ~/.bashrc
+if ! alias punch;then
+   {
+          printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
+          && printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
+          && . ~/.zshrc \
+          && . ~/.bashrc
 
-}||{
-     printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
-     && . ~/.bashrc
-}||{
-     printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
-     && . ~/.zshhrc
-}||{
-   echo "failed: if you are on debian cc build essentials must be installed, run :" \
-     \
-     && echo 'sudo apt update && sudo apt upgrade && sudo apt-get install build-essential' \
-     \
-     && echo 'after running, try building again'
-}
+          }||{
+               printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
+               && . ~/.bashrc
+          }||{
+               printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
+               && . ~/.zshhrc
+          }||{
+          echo "failed: if you are on debian cc build essentials must be installed, run :" \
+               \
+               && echo 'sudo apt update && sudo apt upgrade && sudo apt-get install build-essential' \
+               \
+               && echo 'after running, try building again'
+     }
+fi

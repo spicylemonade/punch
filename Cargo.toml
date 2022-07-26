@@ -16,3 +16,5 @@ shellexpand = "2.1.0"
 anyhow = "1.0"
 thiserror = "1.0"
 
+opener = "0.5.0"
+tabled = "0.8.0"
