@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::fs;
+use crate::error::PunchError;
 use crate::punch;
+use anyhow::Result;
 
 pub struct Trash<'a>{
     pub trash_path: &'a Path,
@@ -19,14 +21,15 @@ impl<'a> Trash<'a> {
         }
     }
     // This is to ensure scenarios of punch -t folder/file.txt can be handled
-    pub fn move_(&self, path: &Path){
+    pub fn move_(&self, path: &Path) -> Result<()>{
         let file_name = path.file_name().unwrap();
         let trash_path = &Path::new(&self.trash_path).join(file_name);
       
         self.update(trash_path);
-        self.move_to_trash(path); 
+        self.move_to_trash(path)?; 
+        Ok(())
     }
-    pub fn move_to_trash(&self, path: &Path) {
+    pub fn move_to_trash(&self, path: &Path) -> Result<()>{
         if path.is_dir(){
             let entries = fs::read_dir(path).expect("unable to parse directory");
             fs::create_dir_all(Path::new(self.trash_path).join(path)).unwrap(); 
@@ -35,11 +38,11 @@ impl<'a> Trash<'a> {
                     if let Ok(file_type) = entry.file_type() {
                         if file_type.is_dir() {
                             // if it is a directory we need to copy the things in the directory . so call again with the new path
-                            self.move_to_trash(&path.join(entry.file_name()))
+                            if let Err(_) = self.move_to_trash(&path.join(entry.file_name())){}
                         } else {
                             let from = path.join(entry.file_name());
                             let to = Path::new(self.trash_path).join(path.join(entry.file_name()));
-                            punch::move_file(&from, &to); 
+                            punch::move_file(&from, &to)?; 
                         }
                     }
                 }
@@ -47,23 +50,24 @@ impl<'a> Trash<'a> {
         } else {
              
             let to = Path::new(self.trash_path).join(path); 
-            punch::move_file(path, &to);
+            punch::move_file(path, &to)?;
         }
 
 
-        
+        Ok(())
     }  
     
-    pub fn remove_from_source(&self, path: &Path){
+    pub fn remove_from_source(&self, path: &Path) ->Result<()>{
          if Path::new(path).is_dir() {
             //Iterate the directory and move it
-             fs::remove_dir_all(path)
-                .expect(format!("error removing directory: {:?}", path).as_str());
+             if let Err(_) = fs::remove_dir_all(path){
+                return Err(PunchError::DeleteDirectoryError(path.display().to_string()).into()).into();
+             }
         } else { 
-           
-            fs::remove_file(path)
-                .expect(format!("error removing file: {:?}", path).as_str());
-     
+             if let Err(_) = fs::remove_file(path){
+                return Err(PunchError::DeleteFileError(path.display().to_string()).into()).into();
+             }  
         }
+        Ok(())
     }
 }

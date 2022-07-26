@@ -2,7 +2,9 @@ use std::{path::Path, fs};
 
 use rusqlite::{Connection};
 use chrono::prelude::*;
+use anyhow::Result;
 
+use crate::error::PunchError;
 //database struct
 #[derive(Debug)]
 struct Files{
@@ -14,7 +16,7 @@ struct Files{
 
 }
 
-pub fn push(paths: &Vec<String>, action: &str) {
+pub fn push(paths: &Vec<String>, action: &str) -> Result<()> {
 
     let home_path = match home::home_dir() {
         Some(path) => path,
@@ -54,10 +56,11 @@ pub fn push(paths: &Vec<String>, action: &str) {
             &action]
         ).expect("sql query failed");
     } 
+    Ok(())
 
 }
 //prints db to screen
-pub fn show(){
+pub fn show() -> Result<()>{
     let home_path = match home::home_dir() {
         Some(path) => path,
         _ => panic!("Unable to trash files"),
@@ -77,10 +80,11 @@ pub fn show(){
     for file in file_iter {
         println!("{:#?}", file.unwrap() as Files);
     }
+    Ok(())
 }
 
 //if the action preformed on the file was "Trash"
-fn u_trash(name: &Path, path: &Path){
+fn u_trash(name: &Path, path: &Path) -> Result<()>{
     //systems home dir
     let home_path  = match  home::home_dir() {
     Some(path) => path,
@@ -98,7 +102,9 @@ fn u_trash(name: &Path, path: &Path){
                 if let Ok(file_type) = entry.file_type() {
                     if file_type.is_dir() {
                         // if it is a directory we need to copy the things in the directory . so call again with the new path
-                        u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))
+                        if let Err(_) = u_trash(&name.join(entry.file_name()), &path.join(entry.file_name())) {
+                             
+                        }
                     } else {
 
                         fs::copy(home_path.join(".ptrash").join(&name.join(entry.file_name())) ,path.join(entry.file_name())).unwrap();
@@ -107,22 +113,30 @@ fn u_trash(name: &Path, path: &Path){
             }
         } 
   } else {
-      fs::copy(home_path.join(".ptrash").join(name) , path).unwrap();
+      if let Err(_) = fs::copy(home_path.join(".ptrash").join(name) , path) {
+        return Err(PunchError::CopyFileError(name.display().to_string()).into()).into();
+      }
   }
+  Ok(())
 }
 //if the action preformed on the file was "Create"
-fn u_create(path: &String){
+fn u_create(path: &String) -> Result<()>{
     if (Path::new(path)).is_dir() {
-        fs::remove_dir_all(path)
-            .expect(format!("error deleting folder: {}", path).as_str());
+        if let Err(_) = fs::remove_dir_all(path) {
+            return Err(PunchError::DeleteDirectoryError(path.to_string()).into()).into();
+        } 
     } else {
-        fs::remove_file(path).expect(format!("error deleting file: {}", path).as_str());
+        if let Err(_) = fs::remove_file(path) {
+            return Err(PunchError::DeleteFileError(path.to_string()).into()).into();
+        }  
     }
+
+    Ok(())
 }
-pub fn undo(){
+pub fn undo() -> Result<()>{
     let home_path = match home::home_dir() {
         Some(path) => path,
-        _ => panic!("Unable to trash files"),
+        _ => return Err(PunchError::TrashCanError.into()).into(),
     };
     let conn: Connection = Connection::open(home_path.join(Path::new(".punch/punch.db"))).unwrap();
     
@@ -139,22 +153,26 @@ pub fn undo(){
     let latest_file = file_iter.last().unwrap().ok().unwrap();
 
     if latest_file._action == "Create"{
-        u_create(&latest_file._path);
+        u_create(&latest_file._path)?;
+
     }
     else if latest_file._action == "Trash"{
-        u_trash(Path::new(&latest_file._name),Path::new(&latest_file._path));
+        u_trash(Path::new(&latest_file._name),Path::new(&latest_file._path))?;
         //delete file in trash after
         let home_path  = match  home::home_dir() {
             Some(path) => path,
-            _ => panic!("Unable to trash files")
+            _ => return Err(PunchError::TrashCanError.into()).into(),
         };
         let trash_file = home_path.join(".ptrash").join(&latest_file._name);
         if trash_file.is_dir() {
-            fs::remove_dir_all(&trash_file)
-                .expect(format!("error deleting folder: {}", &trash_file.display()).as_str());
+            if let Err(_) = fs::remove_dir_all(&trash_file){
+                return Err(PunchError::DeleteDirectoryError(trash_file.display().to_string()).into()).into()
+            }  
         } else {
-            fs::remove_file(&trash_file).expect(format!("error deleting file: {}", &trash_file.display()).as_str());
+            if let Err(_) = fs::remove_file(&trash_file) { 
+                return Err(PunchError::DeleteFileError(trash_file.display().to_string()).into()).into()
+            } 
         }
     }
-        
+    Ok(())
 }

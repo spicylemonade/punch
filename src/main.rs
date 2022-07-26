@@ -1,9 +1,12 @@
 use clap::Parser;
+use anyhow::Result;
+use error::PunchError;
 
 mod db; 
+mod error;
+mod operations;
 mod punch;
 mod trash;
-mod operations;
 
 #[derive(Debug, Parser)]
 #[clap(trailing_var_arg = true)]
@@ -90,7 +93,7 @@ enum InputType {
 }
 
 
-fn main() {
+fn main() -> Result<()>{
     let args = Args::parse();
 
     match args.input_type() {
@@ -99,28 +102,31 @@ fn main() {
         push to db after for files resulting in a deletion (trash,move,delete,deletein),
         push before*/
 InputType::DeleteIn => {
-            operations::delete_files_dir(&args); 
+            operations::delete_files_dir(&args)?; 
             db::push(&&args.din.clone().unwrap(), "DeleteIn")
         },
 
         InputType::CreateIn => {
-            operations::create_in_dir(&args); 
+            operations::create_in_dir(&args)?; 
             db::push(&&args.r#in.clone().unwrap(), "CreateIn")
         },
 
         InputType::Del => {
-            db::push(&&args.del.clone().unwrap(), "Delete");
-            operations::delete_files(&args); 
-            },
+            if let Ok(_) = db::push(&&args.del.clone().unwrap(), "Delete") {
+                operations::delete_files(&args)
+            } else {
+                return Err(PunchError::DbError.into()).into()
+            }
+        },
 
         InputType::Create => {
-            operations::create_files(&args); 
+            operations::create_files(&args)?; 
             db::push(&&args.target, "Create")
         },
 
         InputType::Trash => { 
-            operations::trash_files(&args);
-            db::push(&&args.trash.clone().unwrap(), "Trash");
+            operations::trash_files(&args)?;
+            db::push(&&args.trash.clone().unwrap(), "Trash")
         },
 
         InputType::Undo => { db::undo()},
@@ -132,7 +138,7 @@ InputType::DeleteIn => {
         InputType::Move => {
             match &&args.mve.clone().unwrap()[1].parse::<i32>() {
                Ok(_) => (),
-               Err(_) => db::push(&&args.mve.clone().unwrap(), "Move"), 
+               Err(_) => if let Err(_) = db::push(&&args.mve.clone().unwrap(), "Move"){}, 
             }  
             operations::move_file(&args)
         },
