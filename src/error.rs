@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum PunchError{
+pub enum PunchError {
     #[error("Unable to create file {0}")]
     CreateFileError(String),
     #[error("Unable to create directory {0}")]
@@ -22,6 +22,8 @@ pub enum PunchError{
     TrashNotFound,
     #[error("Can not move file from {0} to {1}")]
     MoveFielError(String, String),
+    #[error("Failed to read file {0}")]
+    ReadFileError(String),
     #[error("Some Db Error Occured")]
     _DbError,
 }

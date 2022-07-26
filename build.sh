@@ -28,16 +28,16 @@ mv ./target/release/punch ~/.punch/bin/
 
 if ! alias punch;then
    {
-          printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
-          && printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
+          printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.zshrc \
+          && printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.bashrc \
           && . ~/.zshrc \
           && . ~/.bashrc
 
           }||{
-               printf 'alias punch="~/.punch/bin/punch"' >> ~/.bashrc \
+               printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.bashrc \
                && . ~/.bashrc
           }||{
-               printf 'alias punch="~/.punch/bin/punch"' >> ~/.zshrc \
+               printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.zshrc \
                && . ~/.zshhrc
           }||{
           echo "failed: if you are on debian cc build essentials must be installed, run :" \

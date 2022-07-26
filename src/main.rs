@@ -1,7 +1,7 @@
-use clap::Parser;
 use anyhow::Result;
+use clap::Parser;
 
-mod db; 
+mod db;
 mod error;
 mod operations;
 mod punch;
@@ -123,30 +123,30 @@ fn main() -> Result<()> {
         push to db after for files resulting in a deletion (trash,move,delete,deletein),
         push before*/
         InputType::DeleteIn => {
-            operations::delete_files_dir(&args)?; 
+            operations::delete_files_dir(&args)?;
             db::push(&&args.din.clone().unwrap(), "DeleteIn", current_dir)?
-        },
+        }
         InputType::CreateIn => {
-            operations::create_in_dir(&args)?; 
+            operations::create_in_dir(&args)?;
             db::push(&&args.r#in.clone().unwrap(), "CreateIn", current_dir)?
-        },
+        }
         InputType::Del => {
             db::push(&&args.del.clone().unwrap(), "Delete", current_dir)?;
             operations::delete_files(&args)?
-        },
+        }
         InputType::Create => {
-            operations::create_files(&args)?; 
+            operations::create_files(&args)?;
             db::push(&&args.target, "Create", current_dir)?
-        },
+        }
 
-        InputType::Trash => { 
+        InputType::Trash => {
             operations::trash_files(&args)?;
             db::push(&&args.trash.clone().unwrap(), "Trash", current_dir)?;
-        },
+        }
         InputType::Undo => db::undo()?,
         InputType::Show => db::show()?,
         InputType::Rename => operations::rename_file(&args)?,
-        InputType::List => operations::list_current_directory()?, 
+        InputType::List => operations::list_current_directory()?,
         InputType::Move => operations::move_file(&args)?,
         InputType::Open => operations::open_file(&args)?,
         InputType::Clear => operations::clear_trash()?,
