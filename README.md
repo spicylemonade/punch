@@ -82,7 +82,10 @@ Name inspired by the `touch` command
   punch -m <file_name> ./<directory_name>/ "Moves the specified file to the specified directory"
   ```
 * ```sh
-  punch -m <file_name> <number_of_moves> "Moves the specified file to the specified directory"
+  punch -m <file_name> <number_of_moves: number> "Moves the specified file to the specified directory"
+  ```
+* ```sh
+  punch -m <file names separated by spaces e.g. test.txt test1.txt> <./<directory_name>/ or number_of_moves: number>
   ```
 * ```sh
   punch -l "Lists the sub-directories and files in the current working directory"
