@@ -56,6 +56,9 @@ pub struct Args {
     /// Clears the trash Directory
     #[clap(long)]
     clear: bool,
+
+    #[clap(long)]
+    db_delete: Option<String>,
 }
 
 impl Args {
@@ -85,6 +88,8 @@ impl Args {
             return InputType::Open;
         } else if let true = self.clear {
             return InputType::Clear;
+        } else if let Some(_) = self.db_delete {
+            return InputType::Dbdelete;
         } else {
             unreachable!()
         }
@@ -105,6 +110,7 @@ enum InputType {
     List,
     Open,
     Clear,
+    Dbdelete,
 }
 
 fn create_files(args: &Args) {
@@ -336,6 +342,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         InputType::Open => open_file(&args)?,
 
         InputType::Clear => clear_trash()?,
+
+        InputType::Dbdelete => db::delete(args.db_delete.unwrap()),
     }
     Ok(())
 }
