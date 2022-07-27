@@ -38,8 +38,9 @@
 
 ### About punch :bulb:
 
-It can be kind of easy to forget which bash command do what, for folder creation, we have `mkdir`, for files `cat` and `touch` and for deletion we have `rm`,
-and each of them has its own flags and ways to append multiple so why not just have one command do it all.
+It can be kind of easy to forget which bash command does what, for folder creation, we have `mkdir`, for files `cat` and `touch` , and for deletion we have `rm`,
+each of them has its own flags and ways to append multiple, so why not just have one command do it all.
+
 
 Name inspired by the `touch` command
 
