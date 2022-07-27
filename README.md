@@ -125,8 +125,9 @@ Name inspired by the `touch` command
    ```sh
     ./build.ps1
    ```
-If the build ends in an error you may not have the c libraries installed:
-for debian based systems
+#### If the build ends in an error you may not have the c libraries installed:
+
+for debian based systems ->
 ```sh
   sudo apt-get install build-essential
 ```
@@ -134,7 +135,7 @@ for arch based
 ```sh
   sudo pacman -Sy base-devel
 ```
-for windows
+for windows ->
 
 run .\vs_BuildTools.exe in the punch clone directory then click on "Desktop Development with c++" and install
 
