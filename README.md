@@ -57,18 +57,16 @@ Name inspired by the `touch` command
   punch --help "to bring up help"
   ```
 * ```sh
-  punch <file_name> "to create file"
+  punch <file_name>... "to create file" or directory
   ```
 * ```sh
   punch -r <file1> <file2> "to rename a file"
   ```
-* :bell:(bonus)
-  ```sh
-    punch ./<directory_name>/ "to use without -dir flag"
-    ```
 * ```sh
   punch -d <file_name> "or"  punch -d ./<directory_name>/ "to delete"
   ```
+* :bell:(bonus)
+
 * ```sh
   punch -in ./<target_directory_name>/ <file or directory_name> "creates files inside target directory"
   ```
@@ -79,18 +77,23 @@ Name inspired by the `touch` command
   punch -t <file or directory_name> "trashed the specified file or directory"
   ```
 * ```sh
-  punch -m <file_name> ./<directory_name>/ "Moves the specified file to the specified directory"
-  ```
-* ```sh
-  punch -m <file_name> <number_of_moves: number> "Moves the specified file to the specified directory"
-  ```
-* ```sh
   punch -m <file names separated by spaces e.g. test.txt test1.txt> <./<directory_name>/ or number_of_moves: number>
   ```
 * ```sh
   punch -l "Lists the sub-directories and files in the current working directory"
   ```
-
+* ```sh
+  punch -o "opens file with default application"
+  ```
+* ```sh
+  punch -u "undoes the last create or trash command"
+  ```
+* ```sh
+  punch --sizeof "returns the size of a file/folder"
+  ```
+* ```sh
+  punch -s "displays a table of file creation/deletion/trash history"
+  ```
 
 ### Built With
 
@@ -121,7 +124,15 @@ Name inspired by the `touch` command
    ```sh
     ./build.ps1
    ```
-
+If the build ends in an error you may not have the c libraries installed:
+for debian based systems
+```sh
+  sudo apt-get install build-essential
+```
+for arch based
+```sh
+  sudo pacman -Sy base-devel
+```
 <p align="right">{<a href="#top">To top</a>}</p>
 
 
@@ -132,6 +143,8 @@ Name inspired by the `touch` command
 ![image](https://user-images.githubusercontent.com/84095175/179335838-cb1779ba-34b1-45e8-8ec2-2307998b2e64.png)
 
 ![image](https://user-images.githubusercontent.com/84095175/179336224-888899b8-913e-4061-9dd4-e0b799f5083e.png )
+
+![image](https://user-images.githubusercontent.com/84095175/181157889-540acdb9-6f5f-4924-be9e-91e3db5da13d.png)
 
 
 
