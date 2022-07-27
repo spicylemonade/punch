@@ -48,3 +48,5 @@ then
                && echo 'after running, try building again'
      }
 fi
+
+echo "build complete-- type: punch -h"
