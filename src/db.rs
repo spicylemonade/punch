@@ -1,5 +1,5 @@
-use chrono::prelude::*;
 use anyhow::Result;
+use chrono::prelude::*;
 use rusqlite::Connection;
 use std::fs;
 use std::path::Path;
@@ -58,11 +58,10 @@ struct Files {
 }
 
 pub fn push(paths: &Vec<String>, action: &str, current_dir: &Path) -> Result<()> {
-
     let _home_path = match home::home_dir() {
         Some(path) => path,
         _ => return Err(PunchError::TrashCanError.into()).into(),
-    }; 
+    };
     //accessing current date & time
     let conn = db_connect!(".punch/punch.db", conn);
 
@@ -124,7 +123,7 @@ fn u_trash(name: &Path, path: &Path) -> Result<()> {
             .expect("unable to parse directory");
 
         if let Err(_) = punch::create_directory(path) {
-             return Err(PunchError::CreateDirectoryError(path.display().to_string()).into()).into()
+            return Err(PunchError::CreateDirectoryError(path.display().to_string()).into()).into();
         }
 
         for entry in entries {
@@ -134,11 +133,16 @@ fn u_trash(name: &Path, path: &Path) -> Result<()> {
                     u_trash(&name.join(entry.file_name()), &path.join(entry.file_name()))?
                 } else {
                     let from = &home_path
-                            .join(".punch/trash/")
-                            .join(&name.join(entry.file_name()));
+                        .join(".punch/trash/")
+                        .join(&name.join(entry.file_name()));
                     let to = &path.join(entry.file_name());
-                   if let Err(_) = punch::move_file(from, to){
-                         return Err(PunchError::MoveFielError(from.display().to_string(), to.display().to_string() ).into()).into();
+                    if let Err(_) = punch::move_file(from, to) {
+                        return Err(PunchError::MoveFielError(
+                            from.display().to_string(),
+                            to.display().to_string(),
+                        )
+                        .into())
+                        .into();
                     }
                 }
             }
@@ -146,34 +150,44 @@ fn u_trash(name: &Path, path: &Path) -> Result<()> {
     } else {
         let from = &home_path.join(".punch/trash/").join(name);
         let to = &path.join(name);
-        if let Err(_) = punch::move_file(from, to){
-             return Err(PunchError::MoveFielError(from.display().to_string(), to.display().to_string() ).into()).into();
+        if let Err(_) = punch::move_file(from, to) {
+            return Err(PunchError::MoveFielError(
+                from.display().to_string(),
+                to.display().to_string(),
+            )
+            .into())
+            .into();
         }
     }
     //delete file in trash after
 
     if trash_file.is_dir() {
         if let Err(_) = punch::remove_directory(&trash_file) {
-                return Err(PunchError::DeleteDirectoryError(trash_file.display().to_string()).into()).into()
-            }  
-        ;
+            return Err(PunchError::DeleteDirectoryError(trash_file.display().to_string()).into())
+                .into();
+        };
     } else {
-        if let Err(_) = punch::remove_file(&trash_file) { 
-            return Err(PunchError::DeleteFileError(trash_file.display().to_string()).into()).into()
-        } 
+        if let Err(_) = punch::remove_file(&trash_file) {
+            return Err(PunchError::DeleteFileError(trash_file.display().to_string()).into())
+                .into();
+        }
     }
     Ok(())
 }
 //if the action preformed on the file was "Create"
 fn u_create(name: &Path, path: &Path) -> Result<()> {
     if (path.join(name)).is_dir() {
-        if let Err(_) = punch::remove_directory(path.join(name).as_path()){
-             return Err(PunchError::DeleteDirectoryError(path.join(name).display().to_string()).into()).into();
+        if let Err(_) = punch::remove_directory(path.join(name).as_path()) {
+            return Err(
+                PunchError::DeleteDirectoryError(path.join(name).display().to_string()).into(),
+            )
+            .into();
         }
     } else {
-         if let Err(_) =  punch::remove_file(path.join(name).as_path()){
-             return Err(PunchError::DeleteFileError(path.join(name).display().to_string()).into()).into();
-         }
+        if let Err(_) = punch::remove_file(path.join(name).as_path()) {
+            return Err(PunchError::DeleteFileError(path.join(name).display().to_string()).into())
+                .into();
+        }
     }
 
     Ok(())
@@ -187,6 +201,8 @@ pub fn undo() -> Result<()> {
         u_create(Path::new(&latest_file._name), Path::new(&latest_file._path))?;
     } else if latest_file._action == "Trash" {
         u_trash(Path::new(&latest_file._name), Path::new(&latest_file._path))?;
+    } else {
+        return Err(anyhow::anyhow!("cannot undo a delete"));
     }
     Ok(())
 }
@@ -195,5 +211,5 @@ pub fn delete(name: String) -> Result<()> {
     let conn = db_connect!(".punch/punch.db", conn);
     conn.execute("DELETE FROM files WHERE name=(?1)", [&name])
         .unwrap();
-        Ok(())
+    Ok(())
 }

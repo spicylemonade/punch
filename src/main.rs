@@ -10,7 +10,7 @@ mod trash;
 #[derive(Debug, Parser, Clone)]
 #[clap(trailing_var_arg = true, version = "1.6.0")]
 pub struct Args {
-    /// To create file
+    /// To create file or directory
     #[clap(value_parser, multiple_values = true)]
     target: Vec<String>,
     /// To delete
