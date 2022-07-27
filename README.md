@@ -110,6 +110,7 @@ Name inspired by the `touch` command
 #### Linux:
 
 * go into folder and run ``source config.sh`` or ``. ./config.sh``
+* also available in the aur "punch-git"
 
 #### Windows:
 
