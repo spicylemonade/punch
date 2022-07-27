@@ -133,6 +133,10 @@ for arch based
 ```sh
   sudo pacman -Sy base-devel
 ```
+for windows
+
+run .\vs_BuildTools.exe in the punch clone directory then click on "Desktop Development with c++" and install
+
 <p align="right">{<a href="#top">To top</a>}</p>
 
 
