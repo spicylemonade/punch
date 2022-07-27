@@ -23,6 +23,7 @@ mv .\target\release\punch.exe $Env:USERPROFILE\.punch\bin\
 
 $Env:PATH = "$Env:PATH; $ENV:USERPROFILE\.punch\bin\"
 
-setx PATH "$Env:PATH; $ENV:USERPROFILE\.punch\bin\" -m
+echo '$Env:PATH = "$Env:PATH; $ENV:USERPROFILE.punch\bin"' >> $profile
+
 
 echo "build complete-- type: punch -h"
