@@ -26,7 +26,8 @@ cargo build  --release \
 
 mv ./target/release/punch ~/.punch/bin/
 
-if ! alias punch;then
+if ! command -V punch &> /dev/null
+then
    {
           printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.zshrc \
           && printf 'export PATH=$PATH:~/.punch/bin/' >> ~/.bashrc \
