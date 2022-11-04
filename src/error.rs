@@ -2,6 +2,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PunchError {
+    #[error("Invalid command given to CLI")]
+    CliInvalidInputError,
     #[error("Unable to create file {0}")]
     CreateFileError(String),
     #[error("Unable to create directory {0}")]
