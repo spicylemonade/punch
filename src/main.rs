@@ -1,5 +1,6 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use error::PunchError;
 
 mod db;
 mod error;
@@ -60,38 +61,38 @@ pub struct Args {
 }
 
 impl Args {
-    fn input_type(&self) -> InputType {
+    fn input_type(&self) -> Result<InputType, error::PunchError> {
         if let Some(_) = self.din {
-            return InputType::DeleteIn;
+            return Ok(InputType::DeleteIn);
         } else if let Some(_) = self.del {
-            return InputType::Del;
+            return Ok(InputType::Del);
         } else if let Some(_) = self.r#in {
-            return InputType::CreateIn;
+            return Ok(InputType::CreateIn);
         } else if let Some(_) = self.trash {
-            return InputType::Trash;
+            return Ok(InputType::Trash);
         } else if self.target.len() > 0 {
-            return InputType::Create;
+            return Ok(InputType::Create);
         } else if let true = self.undo {
-            return InputType::Undo;
+            return Ok(InputType::Undo);
         } else if let true = self.show {
-            return InputType::Show;
+            return Ok(InputType::Show);
         } else if let true = self.list {
-            return InputType::List;
+            return Ok(InputType::List);
         } else if let Some(_) = self.mve {
-            return InputType::Move;
+            return Ok(InputType::Move);
         } else if let Some(ref args) = self.ren {
             assert!(args.len() == 2, "Expected 2 arguments got {}", args.len());
-            return InputType::Rename;
+            return Ok(InputType::Rename);
         } else if let Some(_) = self.open {
-            return InputType::Open;
+            return Ok(InputType::Open);
         } else if let true = self.clear {
-            return InputType::Clear;
+            return Ok(InputType::Clear);
         } else if let Some(_) = self.db_delete {
-            return InputType::Dbdelete;
+            return Ok(InputType::Dbdelete);
         } else if let Some(_) = self.sizeof {
-            return InputType::Sizeof;
+            return Ok(InputType::Sizeof);
         } else {
-            unreachable!()
+            Err(PunchError::CliInvalidInputError)
         }
     }
 }
@@ -118,40 +119,47 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let current_dir = &std::env::current_dir().unwrap();
     match args.input_type() {
-        //order matters for pushing to the database
-        /*for files that result increating in current dir
-        push to db after for files resulting in a deletion (trash,move,delete,deletein),
-        push before*/
-        InputType::DeleteIn => {
-            operations::delete_files_dir(&args)?;
-            db::push(&&args.din.clone().unwrap(), "DeleteIn", current_dir)?
+        Ok(input_type) => match input_type {
+            //order matters for pushing to the database
+            /*for files that result increating in current dir
+            push to db after for files resulting in a deletion (trash,move,delete,deletein),
+            push before*/
+            InputType::DeleteIn => {
+                operations::delete_files_dir(&args)?;
+                db::push(&&args.din.clone().unwrap(), "DeleteIn", current_dir)?
+            }
+            InputType::CreateIn => {
+                operations::create_in_dir(&args)?;
+                db::push(&&args.r#in.clone().unwrap(), "CreateIn", current_dir)?
+            }
+            InputType::Del => {
+                db::push(&&args.del.clone().unwrap(), "Delete", current_dir)?;
+                operations::delete_files(&args)?
+            }
+            InputType::Create => {
+                operations::create_files(&args)?;
+                db::push(&&args.target, "Create", current_dir)?
+            }
+            InputType::Trash => {
+                operations::trash_files(&args)?;
+                db::push(&&args.trash.clone().unwrap(), "Trash", current_dir)?;
+            }
+            InputType::Undo => db::undo()?,
+            InputType::Show => db::show()?,
+            InputType::Rename => operations::rename_file(&args)?,
+            InputType::List => operations::list_current_directory()?,
+            InputType::Move => operations::move_file(&args)?,
+            InputType::Open => operations::open_file(&args)?,
+            InputType::Clear => operations::clear_trash()?,
+            InputType::Dbdelete => db::delete(args.db_delete.unwrap())?,
+            InputType::Sizeof => operations::sizeof(&args)?,
+        },
+        Err(e) => {
+            eprintln!("Error: {e}");
+            let mut cmd = Args::command();
+            let _ = cmd.print_help();
+            std::process::exit(1);
         }
-        InputType::CreateIn => {
-            operations::create_in_dir(&args)?;
-            db::push(&&args.r#in.clone().unwrap(), "CreateIn", current_dir)?
-        }
-        InputType::Del => {
-            db::push(&&args.del.clone().unwrap(), "Delete", current_dir)?;
-            operations::delete_files(&args)?
-        }
-        InputType::Create => {
-            operations::create_files(&args)?;
-            db::push(&&args.target, "Create", current_dir)?
-        }
-
-        InputType::Trash => {
-            operations::trash_files(&args)?;
-            db::push(&&args.trash.clone().unwrap(), "Trash", current_dir)?;
-        }
-        InputType::Undo => db::undo()?,
-        InputType::Show => db::show()?,
-        InputType::Rename => operations::rename_file(&args)?,
-        InputType::List => operations::list_current_directory()?,
-        InputType::Move => operations::move_file(&args)?,
-        InputType::Open => operations::open_file(&args)?,
-        InputType::Clear => operations::clear_trash()?,
-        InputType::Dbdelete => db::delete(args.db_delete.unwrap())?,
-        InputType::Sizeof => operations::sizeof(&args)?,
     }
     Ok(())
 }
